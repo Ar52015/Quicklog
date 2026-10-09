@@ -54,3 +54,9 @@ compile_commands.json
 *creator.user*
 
 *_qmlcache.qrc
+
+# Manual QA folder
+Quicklog-testing/
+
+# scratch dir
+scratch/
