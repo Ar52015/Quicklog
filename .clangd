@@ -1,2 +1,5 @@
 CompileFlags:
   Remove: [-mno-direct-extern-access]
+
+Completion:
+  HeaderInsertion: Never
