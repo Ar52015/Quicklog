@@ -21,3 +21,7 @@ qt_add_qml_module(quicklog
 )
 
 target_link_libraries(quicklog PRIVATE Qt6::Quick)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    target_compile_definitions(quicklog PRIVATE QUICKLOG_DEV)
+endif()
