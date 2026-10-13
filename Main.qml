@@ -1,11 +1,18 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Dialogs
 
 Window {
     width: 640
     height: 80
     visible: true
     title: "Quicklog"
+
+    Component.onCompleted: {
+        if (backend.vaultFolder === "") {
+            folderDialog.open();
+        }
+    }
 
     Backend {
         id: backend
@@ -27,5 +34,11 @@ Window {
         anchors.topMargin: 8
         textFormat: Text.MarkdownText
         text: backend.formatBullet(field.text)
+    }
+
+    FolderDialog {
+        id: folderDialog
+        title: "Choose the vault folder"
+        onAccepted: backend.setVaultFolderUrl(selectedFolder)
     }
 }

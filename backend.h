@@ -3,6 +3,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QUrl>
 #include <QtQmlIntegration/qqmlintegration.h>
 
 class Backend : public QObject {
@@ -14,6 +15,7 @@ class Backend : public QObject {
   public:
     QString vaultFolder() const;
     void setVaultFolder(const QString& folder);
+    Q_INVOKABLE void setVaultFolderUrl(const QUrl& folder);
 
     Q_INVOKABLE QString formatBullet(const QString& text) const;
 

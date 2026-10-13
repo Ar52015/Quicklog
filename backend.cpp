@@ -15,6 +15,10 @@ void Backend::setVaultFolder(const QString& folder) {
     emit vaultFolderChanged();
 }
 
+void Backend::setVaultFolderUrl(const QUrl& folder) {
+    setVaultFolder(folder.toLocalFile());
+}
+
 QString Backend::formatBullet(const QString& text) const {
     QString time = QTime::currentTime().toString("hh:mm AP");
     return "- \\[ " + time + " \\] - " + text;
