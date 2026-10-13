@@ -60,3 +60,6 @@ Quicklog-testing/
 
 # scratch dir
 scratch/
+
+# dev help scripts
+refresh
