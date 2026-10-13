@@ -1,5 +1,8 @@
 #include "backend.h"
 
+#include <QDate>
+#include <QDir>
+#include <QFile>
 #include <QSettings>
 #include <QTime>
 
@@ -13,10 +16,19 @@ void Backend::setVaultFolder(const QString& folder) {
     }
     QSettings().setValue("vaultFolder", folder);
     emit vaultFolderChanged();
+    emit logExistsChanged();
 }
 
 void Backend::setVaultFolderUrl(const QUrl& folder) {
     setVaultFolder(folder.toLocalFile());
+}
+
+bool Backend::logExists() const {
+    if (vaultFolder().isEmpty()) {
+        return false;
+    }
+    QString name = QDate::currentDate().toString("yyyy-MM-dd") + ".md";
+    return QFile::exists(QDir(vaultFolder()).filePath("Logs/" + name));
 }
 
 QString Backend::formatBullet(const QString& text) const {
