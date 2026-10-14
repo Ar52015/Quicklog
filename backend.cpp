@@ -31,6 +31,8 @@ bool Backend::logExists() const {
     return QFile::exists(QDir(vaultFolder()).filePath("Logs/" + name));
 }
 
+void Backend::refresh() { emit logExistsChanged(); }
+
 QString Backend::formatBullet(const QString& text) const {
     QString time = QTime::currentTime().toString("hh:mm AP");
     return "- \\[ " + time + " \\] - " + text;

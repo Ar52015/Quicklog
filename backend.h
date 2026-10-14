@@ -19,6 +19,7 @@ class Backend : public QObject {
     void setVaultFolder(const QString& folder);
     Q_INVOKABLE void setVaultFolderUrl(const QUrl& folder);
     bool logExists() const;
+    Q_INVOKABLE void refresh();
 
     Q_INVOKABLE QString formatBullet(const QString& text) const;
 
