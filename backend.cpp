@@ -3,6 +3,7 @@
 #include <QDate>
 #include <QDir>
 #include <QFile>
+#include <QFileInfo>
 #include <QSettings>
 #include <QTime>
 
@@ -17,6 +18,7 @@ void Backend::setVaultFolder(const QString& folder) {
     QSettings().setValue("vaultFolder", folder);
     emit vaultFolderChanged();
     emit logExistsChanged();
+    emit frontsChanged();
 }
 
 void Backend::setVaultFolderUrl(const QUrl& folder) {
@@ -31,7 +33,23 @@ bool Backend::logExists() const {
     return QFile::exists(QDir(vaultFolder()).filePath("Logs/" + name));
 }
 
-void Backend::refresh() { emit logExistsChanged(); }
+QStringList Backend::fronts() const {
+    if (vaultFolder().isEmpty()) {
+        return {};
+    }
+    QDir projects(QDir(vaultFolder()).filePath("Projects"));
+    QStringList names;
+    for (const QFileInfo& file :
+         projects.entryInfoList({"*.md"}, QDir::Files, QDir::Name)) {
+        names.append(file.completeBaseName());
+    }
+    return names;
+}
+
+void Backend::refresh() {
+    emit logExistsChanged();
+    emit frontsChanged();
+}
 
 QString Backend::formatBullet(const QString& text) const {
     QString time = QTime::currentTime().toString("hh:mm AP");

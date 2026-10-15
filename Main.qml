@@ -45,6 +45,11 @@ Window {
         anchors.topMargin: 8
         spacing: 8
 
+        ComboBox {
+            model: backend.fronts
+            enabled: backend.logExists
+        }
+
         Button {
             text: "+"
         }
