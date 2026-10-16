@@ -39,16 +39,20 @@ Window {
         text: backend.formatBullet(field.text)
     }
 
+    ComboBox {
+        anchors.top: preview.bottom
+        anchors.left: field.left
+        anchors.topMargin: 8
+        model: backend.fronts
+        enabled: backend.logExists
+        implicitContentWidthPolicy: ComboBox.WidestText
+    }
+
     Row {
         anchors.top: preview.bottom
         anchors.right: field.right
         anchors.topMargin: 8
         spacing: 8
-
-        ComboBox {
-            model: backend.fronts
-            enabled: backend.logExists
-        }
 
         Button {
             text: "+"
