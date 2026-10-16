@@ -8,5 +8,6 @@
 QStringList orderFronts(const QStringList& fronts,
                         const QMap<QString, QString>& logs);
 bool isActiveProject(const QString& projectText);
+QStringList inProgressPhases(const QString& projectText);
 
 #endif

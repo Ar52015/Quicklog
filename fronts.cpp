@@ -19,6 +19,21 @@ static QString normFront(QString cell) {
     return alias.value(cell.toLower(), cell);
 }
 
+static QStringList tableCells(const QString& line) {
+    QString row = line.trimmed();
+    if (!row.startsWith('|')) {
+        return {};
+    }
+    if (row.endsWith('|')) {
+        row.chop(1);
+    }
+    QStringList cells = row.mid(1).split('|');
+    for (QString& cell : cells) {
+        cell = cell.trimmed();
+    }
+    return cells;
+}
+
 QStringList orderFronts(const QStringList& fronts,
                         const QMap<QString, QString>& logs) {
     QHash<QString, QString> lastDate;
@@ -28,18 +43,11 @@ QStringList orderFronts(const QStringList& fronts,
         text.remove(QRegularExpression(
             "<!--.*?-->", QRegularExpression::DotMatchesEverythingOption));
         for (const QString& line : text.split('\n')) {
-            QString row = line.trimmed();
-            if (!row.startsWith('|')) {
-                continue;
-            }
-            if (row.endsWith('|')) {
-                row.chop(1);
-            }
-            QStringList cells = row.mid(1).split('|');
+            QStringList cells = tableCells(line);
             if (cells.size() < 3) {
                 continue;
             }
-            QString first = cells[0].trimmed();
+            QString first = cells[0];
             if (first.contains(QRegularExpression("^:?-{2,}")) ||
                 first.toLower() == "front") {
                 continue;
@@ -85,4 +93,28 @@ bool isActiveProject(const QString& projectText) {
         }
     }
     return true;
+}
+
+QStringList inProgressPhases(const QString& projectText) {
+    QRegularExpression italic("^\\*([^*]+)\\*$");
+    QStringList phases;
+    qsizetype phaseColumn = -1;
+    qsizetype statusColumn = -1;
+    for (const QString& line : projectText.split('\n')) {
+        QStringList cells = tableCells(line);
+        if (phaseColumn < 0) {
+            phaseColumn = cells.indexOf("**Phase**");
+            statusColumn = cells.indexOf("Status");
+            continue;
+        }
+        if (cells.isEmpty()) {
+            break;
+        }
+        QRegularExpressionMatch match = italic.match(cells.value(phaseColumn));
+        QString status = cells.value(statusColumn).toLower();
+        if (match.hasMatch() && (status.isEmpty() || status == "in-progress")) {
+            phases.append(match.captured(1).trimmed());
+        }
+    }
+    return phases;
 }

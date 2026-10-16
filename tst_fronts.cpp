@@ -15,6 +15,8 @@ class TestFronts : public QObject {
     void frontCellsAreCleaned();
     void activeProjects_data();
     void activeProjects();
+    void phaseTables_data();
+    void phaseTables();
 };
 
 void TestFronts::newestFirst() {
@@ -71,7 +73,6 @@ void TestFronts::frontCellsAreCleaned() {
     QFETCH(QString, cell);
     QFETCH(QString, front);
 
-    // "A" has no rows, so front only comes first if its cell was cleaned
     QMap<QString, QString> logs = {
         {"2026-01-01", "| " + cell + " | p | | |\n"}};
     QCOMPARE(orderFronts({"A", front}, logs), QStringList({front, "A"}));
@@ -94,6 +95,54 @@ void TestFronts::activeProjects() {
     QFETCH(bool, active);
 
     QCOMPARE(isActiveProject(text), active);
+}
+
+void TestFronts::phaseTables_data() {
+    QTest::addColumn<QString>("text");
+    QTest::addColumn<QStringList>("phases");
+
+    QTest::newRow("in-progress or empty status")
+        << R"(| S.no. | **Phase** | Start | End | Status      | Approach |
+| :---: | --------- | ----- | --- | ----------- | -------- |
+|  1.   | *one*     |       |     | Done        |          |
+|  2.   | *two*     |       |     | In-Progress |          |
+|  3.   | *three*   |       |     |             |          |
+|  4.   | *four*    |       |     | Paused      |          |
+)" << QStringList({"two", "three"});
+
+    QTest::newRow("any capitalisation")
+        << R"(| S.no. | **Phase** | Start | End | Status      |
+|  1.   | *one*     |       |     | in-progress |
+|  2.   | *two*     |       |     | IN-PROGRESS |
+)" << QStringList({"one", "two"});
+
+    QTest::newRow("columns found by header")
+        << R"(| Status | S.no. | **Phase** |
+| Done   |  1.   | *one*     |
+|        |  2.   | *two*     |
+)" << QStringList({"two"});
+
+    QTest::newRow("blank, plain and bold cells skipped")
+        << R"(| S.no. | **Phase**  | Status |
+|  1.   |            |        |
+|  2.   | plain      |        |
+|  3.   | **bold**   |        |
+|  4.   | *a phrase* |        |
+)" << QStringList({"a phrase"});
+
+    QTest::newRow("stops at the end of the table")
+        << R"(| S.no. | **Phase** | Status |
+|  1.   | *one*     |        |
+
+| 2. | *other* |
+)" << QStringList({"one"});
+}
+
+void TestFronts::phaseTables() {
+    QFETCH(QString, text);
+    QFETCH(QStringList, phases);
+
+    QCOMPARE(inProgressPhases(text), phases);
 }
 
 QTEST_GUILESS_MAIN(TestFronts)
