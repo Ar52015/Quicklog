@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt6 6.11 REQUIRED COMPONENTS Quick)
+find_package(Qt6 6.11 REQUIRED COMPONENTS Quick Test)
 
 qt_standard_project_setup(REQUIRES 6.11)
 
@@ -31,3 +32,9 @@ target_link_libraries(quicklog PRIVATE Qt6::Quick quicklogcore)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(quicklog PRIVATE QUICKLOG_DEV)
 endif()
+
+enable_testing()
+
+qt_add_executable(tst_fronts tst_fronts.cpp)
+target_link_libraries(tst_fronts PRIVATE Qt6::Test quicklogcore)
+add_test(NAME tst_fronts COMMAND tst_fronts)
