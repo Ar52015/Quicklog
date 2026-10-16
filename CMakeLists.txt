@@ -9,10 +9,15 @@ find_package(Qt6 6.11 REQUIRED COMPONENTS Quick)
 
 qt_standard_project_setup(REQUIRES 6.11)
 
+qt_add_library(quicklogcore STATIC
+    fronts.cpp fronts.h
+)
+
+target_link_libraries(quicklogcore PUBLIC Qt6::Core)
+
 qt_add_executable(quicklog
     main.cpp
     backend.cpp backend.h
-    fronts.cpp fronts.h
 )
 
 qt_add_qml_module(quicklog
@@ -21,7 +26,7 @@ qt_add_qml_module(quicklog
         Main.qml
 )
 
-target_link_libraries(quicklog PRIVATE Qt6::Quick)
+target_link_libraries(quicklog PRIVATE Qt6::Quick quicklogcore)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(quicklog PRIVATE QUICKLOG_DEV)
