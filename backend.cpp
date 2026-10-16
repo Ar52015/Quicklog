@@ -1,4 +1,5 @@
 #include "backend.h"
+#include "fronts.h"
 
 #include <QDate>
 #include <QDir>
@@ -6,6 +7,14 @@
 #include <QFileInfo>
 #include <QSettings>
 #include <QTime>
+
+static QString readText(const QString& path) {
+    QFile file(path);
+    if (!file.open(QIODevice::ReadOnly)) {
+        return {};
+    }
+    return QString::fromUtf8(file.readAll());
+}
 
 QString Backend::vaultFolder() const {
     return QSettings().value("vaultFolder").toString();
@@ -41,9 +50,19 @@ QStringList Backend::fronts() const {
     QStringList names;
     for (const QFileInfo& file :
          projects.entryInfoList({"*.md"}, QDir::Files, QDir::Name)) {
-        names.append(file.completeBaseName());
+        if (isActiveProject(readText(file.filePath()))) {
+            names.append(file.completeBaseName());
+        }
     }
-    return names;
+    QDir logDir(QDir(vaultFolder()).filePath("Logs"));
+    QMap<QString, QString> logs;
+    for (const QFileInfo& file : logDir.entryInfoList({"*.md"}, QDir::Files)) {
+        QFile log(file.filePath());
+        if (log.open(QIODevice::ReadOnly)) {
+            logs.insert(file.completeBaseName(), readText(file.filePath()));
+        }
+    }
+    return orderFronts(names, logs);
 }
 
 void Backend::refresh() {

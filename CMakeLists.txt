@@ -12,6 +12,7 @@ qt_standard_project_setup(REQUIRES 6.11)
 qt_add_executable(quicklog
     main.cpp
     backend.cpp backend.h
+    fronts.cpp fronts.h
 )
 
 qt_add_qml_module(quicklog
