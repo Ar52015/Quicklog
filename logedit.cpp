@@ -4,6 +4,15 @@
 #include <QRegularExpression>
 #include <QStringList>
 
+QString bulletLine(const QTime& time, const QString& type,
+                   const QString& text) {
+    QString line = "- \\[ " + time.toString("hh:mm AP") + " \\] - ";
+    if (!type.isEmpty()) {
+        line += type + " ";
+    }
+    return line + text;
+}
+
 QString withFront(const QString& log, const QString& front) {
     QString item = "  - " + front;
     QStringList lines = log.split('\n');

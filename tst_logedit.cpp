@@ -36,6 +36,8 @@ class TestLogEdit : public QObject {
     Q_OBJECT
 
   private slots:
+    void bulletLines_data();
+    void bulletLines();
     void fronts_data();
     void fronts();
     void tracks_data();
@@ -46,6 +48,27 @@ class TestLogEdit : public QObject {
     void noDoneSection();
     void fullTemplate();
 };
+
+void TestLogEdit::bulletLines_data() {
+    QTest::addColumn<QTime>("time");
+    QTest::addColumn<QString>("type");
+    QTest::addColumn<QString>("line");
+
+    QTest::newRow("morning") << QTime(1, 7) << "" << R"(- \[ 01:07 AM \] - hi)";
+    QTest::newRow("noon") << QTime(12, 0) << "" << R"(- \[ 12:00 PM \] - hi)";
+    QTest::newRow("after midnight")
+        << QTime(0, 5) << "" << R"(- \[ 12:05 AM \] - hi)";
+    QTest::newRow("with an entry type")
+        << QTime(23, 59) << "📌" << R"(- \[ 11:59 PM \] - 📌 hi)";
+}
+
+void TestLogEdit::bulletLines() {
+    QFETCH(QTime, time);
+    QFETCH(QString, type);
+    QFETCH(QString, line);
+
+    QCOMPARE(bulletLine(time, type, "hi"), line);
+}
 
 void TestLogEdit::fronts_data() {
     QTest::addColumn<QString>("log");

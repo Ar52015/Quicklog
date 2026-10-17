@@ -1,3 +1,5 @@
+pragma ComponentBehavior: Bound
+
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Dialogs
@@ -6,9 +8,10 @@ Window {
     id: window
 
     property string errorText: ""
+    property string entryType: ""
 
     function addEntry() {
-        backend.addEntry(frontBox.currentText, phaseBox.currentText, field.text);
+        backend.addEntry(frontBox.currentText, phaseBox.currentText, entryType, field.text);
     }
 
     width: 640
@@ -29,6 +32,7 @@ Window {
         onPhasesChanged: Qt.callLater(phaseBox.selectDefault)
         onEntryAdded: {
             field.clear();
+            window.entryType = "";
             window.errorText = "";
         }
         onEntryFailed: message => window.errorText = message
@@ -65,7 +69,7 @@ Window {
             if (backend.logExists && addButton.hovered && field.text === "") {
                 return "Add front without logs?";
             }
-            return backend.formatBullet(field.text);
+            return backend.formatBullet(window.entryType, field.text);
         }
     }
 
@@ -104,13 +108,33 @@ Window {
         anchors.topMargin: 8
         spacing: 8
 
+        Row {
+            spacing: 2
+
+            Repeater {
+                model: ["📌", "❓", "💡", "🐛"]
+
+                Button {
+                    required property string modelData
+
+                    width: 30
+                    text: modelData
+                    highlighted: window.entryType === modelData
+                    enabled: backend.logExists
+                    onClicked: window.entryType = window.entryType === modelData ? "" : modelData
+                }
+            }
+        }
+
         Button {
             id: addButton
+            width: 48
             text: "+"
             onClicked: window.addEntry()
         }
 
         Button {
+            width: 48
             text: "↻"
             onClicked: backend.refresh()
         }

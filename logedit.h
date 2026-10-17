@@ -2,8 +2,10 @@
 #define LOGEDIT_H
 
 #include <QString>
+#include <QTime>
 #include <optional>
 
+QString bulletLine(const QTime& time, const QString& type, const QString& text);
 QString withFront(const QString& log, const QString& front);
 std::optional<QString> withTrack(const QString& log, const QString& front,
                                  const QString& phase);

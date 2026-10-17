@@ -1,5 +1,6 @@
 #include "backend.h"
 #include "fronts.h"
+#include "logedit.h"
 #include "logfile.h"
 
 #include <QDateTime>
@@ -108,7 +109,7 @@ void Backend::refresh() {
 }
 
 void Backend::addEntry(const QString& front, const QString& phase,
-                       const QString& text) {
+                       const QString& type, const QString& text) {
     if (!logExists()) {
         emit entryFailed("Today's log doesn't exist yet. Create it in "
                          "Obsidian, then press ↻.");
@@ -118,8 +119,9 @@ void Backend::addEntry(const QString& front, const QString& phase,
         emit entryFailed("There's no front to add this to.");
         return;
     }
-    QString bullet =
-        text.trimmed().isEmpty() ? QString() : formatBullet(text.trimmed());
+    QString bullet = text.trimmed().isEmpty()
+                         ? QString()
+                         : formatBullet(type, text.trimmed());
     if (std::optional<QString> error = addToLog(
             todayLogPath(), front, phase.isEmpty() ? "-" : phase, bullet)) {
         emit entryFailed(*error);
@@ -128,7 +130,6 @@ void Backend::addEntry(const QString& front, const QString& phase,
     emit entryAdded();
 }
 
-QString Backend::formatBullet(const QString& text) const {
-    QString time = QTime::currentTime().toString("hh:mm AP");
-    return "- \\[ " + time + " \\] - " + text;
+QString Backend::formatBullet(const QString& type, const QString& text) const {
+    return bulletLine(QTime::currentTime(), type, text);
 }
