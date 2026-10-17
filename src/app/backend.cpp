@@ -34,8 +34,16 @@ void Backend::setVaultFolder(const QString& folder) {
     emit frontsChanged();
 }
 
-void Backend::setVaultFolderUrl(const QUrl& folder) {
-    setVaultFolder(folder.toLocalFile());
+bool Backend::setVaultFolderUrl(const QUrl& folder) {
+    QString vault = vaultFolderFor(folder.toLocalFile());
+    if (vault.isEmpty()) {
+        emit failed(QDir(folder.toLocalFile()).dirName() +
+                    " isn't an Obsidian vault: pick the folder that holds "
+                    ".obsidian.");
+        return false;
+    }
+    setVaultFolder(vault);
+    return true;
 }
 
 QString Backend::todayLogPath() const {

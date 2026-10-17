@@ -279,6 +279,10 @@ Window {
     FolderDialog {
         id: folderDialog
         title: "Choose the vault folder"
-        onAccepted: backend.setVaultFolderUrl(selectedFolder)
+        onAccepted: {
+            if (!backend.setVaultFolderUrl(selectedFolder)) {
+                Qt.callLater(folderDialog.open);
+            }
+        }
     }
 }

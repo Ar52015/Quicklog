@@ -35,7 +35,7 @@ class Backend : public QObject {
 
     bool logExists() const;
 
-    Q_INVOKABLE void setVaultFolderUrl(const QUrl& folder);
+    Q_INVOKABLE bool setVaultFolderUrl(const QUrl& folder);
     Q_INVOKABLE void refresh();
     Q_INVOKABLE void addFront(const QString& name);
     Q_INVOKABLE void openFront(const QString& front);
