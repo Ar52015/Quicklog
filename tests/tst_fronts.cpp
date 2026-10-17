@@ -31,6 +31,14 @@ class TestFronts : public QObject {
     void newPhases();
     void newPhaseNeedsATable();
     void newPhaseIsInProgress();
+    void escapedPipesStayInTheirCell();
+    void newPhaseWithApproach();
+    void phaseApproaches_data();
+    void phaseApproaches();
+    void phaseStatuses_data();
+    void phaseStatuses();
+    void statusOfAnUnknownPhase();
+    void pausedPhaseList();
 };
 
 void TestFronts::newestFirst() {
@@ -381,12 +389,12 @@ void TestFronts::newPhases() {
     QFETCH(QString, project);
     QFETCH(QString, name);
     QFETCH(QString, expected);
-    QCOMPARE(withPhase(project, name, QDate(2026, 10, 18)).value_or("none"),
+    QCOMPARE(withPhase(project, name, "", QDate(2026, 10, 18)).value_or("none"),
              expected);
 }
 
 void TestFronts::newPhaseNeedsATable() {
-    QVERIFY(!withPhase("---\nStatus: in-progress\n---\n# Notes\n", "ship",
+    QVERIFY(!withPhase("---\nStatus: in-progress\n---\n# Notes\n", "ship", "",
                        QDate(2026, 10, 18)));
 }
 
@@ -396,8 +404,113 @@ void TestFronts::newPhaseIsInProgress() {
         "| :---: | --- | --- | --- | --- | --- |\n"
         "|  1.  | *setup* | [[2026-10-09]] | [[2026-10-11]] | Done | x |\n";
     const QString added =
-        withPhase(project, "ship", QDate(2026, 10, 18)).value_or("");
+        withPhase(project, "ship", "", QDate(2026, 10, 18)).value_or("");
     QCOMPARE(inProgressPhases(added), QStringList{"ship"});
+}
+
+void TestFronts::escapedPipesStayInTheirCell() {
+    QCOMPARE(tableCells("| a | [[x\\|y]] | c |"),
+             (QStringList{"a", "[[x\\|y]]", "c"}));
+}
+
+static const QString finishTable =
+    "| S.no. | **Phase** | Start | End | Status | Approach |\n"
+    "| :---: | --- | --- | --- | --- | --- |\n"
+    "|  1.  | *setup* | [[2026-10-09]] | [[2026-10-11]] | Done | see [[a\\|b]] "
+    "|\n"
+    "|  2.  | *build* | [[2026-10-11]] |  | In-Progress | old |\n";
+
+void TestFronts::newPhaseWithApproach() {
+    QCOMPARE(
+        withPhase(finishTable, "ship", "pack | ship", QDate(2026, 10, 18))
+            .value_or(""),
+        finishTable +
+            "| 3. | *ship* | [[2026-10-18]] | | In-Progress | pack \\| ship "
+            "|\n");
+}
+
+void TestFronts::phaseApproaches_data() {
+    QTest::addColumn<QString>("name");
+    QTest::addColumn<QString>("expected");
+
+    QTest::newRow("written") << "build" << "old";
+    QTest::newRow("escaped pipe comes back plain") << "setup" << "see [[a|b]]";
+    QTest::newRow("any case") << "BUILD" << "old";
+    QTest::newRow("unknown phase") << "ship" << "";
+}
+
+void TestFronts::phaseApproaches() {
+    QFETCH(QString, name);
+    QFETCH(QString, expected);
+    QCOMPARE(phaseApproach(finishTable, name), expected);
+}
+
+void TestFronts::phaseStatuses_data() {
+    QTest::addColumn<QString>("project");
+    QTest::addColumn<QString>("status");
+    QTest::addColumn<QString>("approach");
+    QTest::addColumn<QString>("expected");
+
+    const QString before =
+        "| S.no. | **Phase** | Start | End | Status | Approach |\n"
+        "| :---: | --- | --- | --- | --- | --- |\n"
+        "|  1.  | *setup* | [[2026-10-09]] | [[2026-10-11]] | Done | see "
+        "[[a\\|b]] |\n";
+    QTest::newRow("done sets the end date")
+        << finishTable << "Done" << "shipped it"
+        << before + "| 2. | *build* | [[2026-10-11]] | [[2026-10-18]] | Done | "
+                    "shipped it |\n";
+    QTest::newRow("paused keeps the end empty")
+        << finishTable << "Paused" << "old"
+        << before + "| 2. | *build* | [[2026-10-11]] | | Paused | old |\n";
+    QTest::newRow("abandoned escapes a pipe")
+        << finishTable << "Abandoned" << "a | b"
+        << before +
+               "| 2. | *build* | [[2026-10-11]] | [[2026-10-18]] | Abandoned | "
+               "a \\| b |\n";
+    QTest::newRow("resume keeps the end empty")
+        << QString(finishTable)
+               .replace("| In-Progress | old |", "| Paused | old |")
+        << "In-Progress" << "old"
+        << before + "| 2. | *build* | [[2026-10-11]] | | In-Progress | old |\n";
+    QTest::newRow("no Approach column")
+        << "| S.no. | **Phase** | Start | End | Status |\n"
+           "| :---: | --- | --- | --- | --- |\n"
+           "|  1.  | *build* | [[2026-10-07]] |  | In-Progress |\n"
+        << "Done" << "ignored"
+        << "| S.no. | **Phase** | Start | End | Status |\n"
+           "| :---: | --- | --- | --- | --- |\n"
+           "| 1. | *build* | [[2026-10-07]] | [[2026-10-18]] | Done |\n";
+}
+
+void TestFronts::phaseStatuses() {
+    QFETCH(QString, project);
+    QFETCH(QString, status);
+    QFETCH(QString, approach);
+    QFETCH(QString, expected);
+    QCOMPARE(
+        withPhaseStatus(project, "build", status, approach, QDate(2026, 10, 18))
+            .value_or("none"),
+        expected);
+}
+
+void TestFronts::statusOfAnUnknownPhase() {
+    QVERIFY(
+        !withPhaseStatus(finishTable, "ship", "Done", "", QDate(2026, 10, 18)));
+    QVERIFY(!withPhaseStatus("# Notes\n", "build", "Done", "",
+                             QDate(2026, 10, 18)));
+}
+
+void TestFronts::pausedPhaseList() {
+    const QString project =
+        "| S.no. | **Phase** | Start | End | Status |\n"
+        "| :---: | --- | --- | --- | --- |\n"
+        "|  1.  | *a* | [[2026-10-01]] | [[2026-10-02]] | Done |\n"
+        "|  2.  | *b* | [[2026-10-03]] |  | Paused |\n"
+        "|  3.  | *c* | [[2026-10-04]] |  | In-Progress |\n"
+        "|  4.  | *d* | [[2026-10-05]] |  | paused |\n";
+    QCOMPARE(pausedPhases(project), (QStringList{"b", "d"}));
+    QCOMPARE(inProgressPhases(project), QStringList{"c"});
 }
 
 QTEST_GUILESS_MAIN(TestFronts)

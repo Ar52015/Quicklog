@@ -6,16 +6,15 @@ Popup {
 
     property alias placeholderText: nameField.placeholderText
     property string acceptText
-    property string extraText
+    property string initialText
 
     signal nameAccepted(string name)
-    signal extraClicked
 
     anchors.centerIn: Overlay.overlay
     modal: true
     focus: true
     onOpened: {
-        nameField.clear();
+        nameField.text = popup.initialText;
         nameField.forceActiveFocus();
     }
 
@@ -40,15 +39,6 @@ Popup {
                 text: popup.acceptText
                 onClicked: {
                     popup.nameAccepted(nameField.text);
-                    popup.close();
-                }
-            }
-
-            EnterButton {
-                visible: popup.extraText !== ""
-                text: popup.extraText
-                onClicked: {
-                    popup.extraClicked();
                     popup.close();
                 }
             }

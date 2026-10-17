@@ -69,8 +69,10 @@ std::optional<QString> addToLog(const QString& path, const QString& front,
     return writeText(path, "today's log", text);
 }
 
-std::optional<QString>
-addPhaseToProject(const QString& path, const QString& name, const QDate& day) {
+std::optional<QString> addPhaseToProject(const QString& path,
+                                         const QString& name,
+                                         const QString& approach,
+                                         const QDate& day) {
     const QString label = QFileInfo(path).fileName();
     QString original;
     if (std::optional<QString> error = readText(path, label, original)) {
@@ -81,7 +83,7 @@ addPhaseToProject(const QString& path, const QString& name, const QDate& day) {
     QString text = original;
     text.replace("\r\n", "\n");
 
-    std::optional<QString> added = withPhase(text, name, day);
+    std::optional<QString> added = withPhase(text, name, approach, day);
     if (!added) {
         return label + " has no phase table.";
     }
@@ -91,6 +93,36 @@ addPhaseToProject(const QString& path, const QString& name, const QDate& day) {
     text = *added;
     if (crlf) {
         text.replace("\n", "\r\n");
+    }
+    return writeText(path, label, text);
+}
+
+std::optional<QString> setPhaseStatusInProject(const QString& path,
+                                               const QString& name,
+                                               const QString& status,
+                                               const QString& approach,
+                                               const QDate& day) {
+    const QString label = QFileInfo(path).fileName();
+    QString original;
+    if (std::optional<QString> error = readText(path, label, original)) {
+        return error;
+    }
+
+    bool crlf = original.contains("\r\n");
+    QString text = original;
+    text.replace("\r\n", "\n");
+
+    std::optional<QString> finished =
+        withPhaseStatus(text, name, status, approach, day);
+    if (!finished) {
+        return name + " isn't in the phase table of " + label + ".";
+    }
+    text = *finished;
+    if (crlf) {
+        text.replace("\n", "\r\n");
+    }
+    if (text == original) {
+        return std::nullopt;
     }
     return writeText(path, label, text);
 }

@@ -24,10 +24,11 @@ QStringList tableCells(const QString& line) {
     if (!row.startsWith('|')) {
         return {};
     }
-    if (row.endsWith('|')) {
+    if (row.endsWith('|') && !row.endsWith("\\|")) {
         row.chop(1);
     }
-    QStringList cells = row.mid(1).split('|');
+    static const QRegularExpression border(R"((?<!\\)\|)");
+    QStringList cells = row.mid(1).split(border);
     for (QString& cell : cells) {
         cell = cell.trimmed();
     }
@@ -99,7 +100,8 @@ bool isActiveProject(const QString& projectText) {
     return true;
 }
 
-QStringList inProgressPhases(const QString& projectText) {
+static QStringList phasesWhere(const QString& projectText,
+                               bool (*accept)(const QString& status)) {
     QRegularExpression italic("^\\*([^*]+)\\*$");
     QStringList phases;
     qsizetype phaseColumn = -1;
@@ -116,11 +118,22 @@ QStringList inProgressPhases(const QString& projectText) {
         }
         QRegularExpressionMatch match = italic.match(cells.value(phaseColumn));
         QString status = cells.value(statusColumn).toLower();
-        if (match.hasMatch() && (status.isEmpty() || status == "in-progress")) {
+        if (match.hasMatch() && accept(status)) {
             phases.append(match.captured(1).trimmed());
         }
     }
     return phases;
+}
+
+QStringList inProgressPhases(const QString& projectText) {
+    return phasesWhere(projectText, [](const QString& status) {
+        return status.isEmpty() || status == "in-progress";
+    });
+}
+
+QStringList pausedPhases(const QString& projectText) {
+    return phasesWhere(
+        projectText, [](const QString& status) { return status == "paused"; });
 }
 
 QString chooseDefaultPhase(const QStringList& phases, const QString& todaysLog,
@@ -228,25 +241,63 @@ QString phaseNameError(const QString& name) {
     return {};
 }
 
-std::optional<QString> withPhase(const QString& projectText,
-                                 const QString& name, const QDate& day) {
-    static const QRegularExpression separator("^:?-{2,}");
-    static const QRegularExpression italic("^\\*([^*]+)\\*$");
-    static const QRegularExpression number("^(\\d+)\\.?$");
-    QStringList lines = projectText.split('\n');
-    qsizetype header = -1;
-    QStringList columns;
+static qsizetype phaseTableHeader(const QStringList& lines,
+                                  QStringList& columns) {
     for (qsizetype i = 0; i < lines.size(); ++i) {
         columns = tableCells(lines[i]);
         if (columns.contains("**Phase**")) {
-            header = i;
-            break;
+            return i;
         }
     }
+    return -1;
+}
+
+static QString phaseName(const QString& cell) {
+    static const QRegularExpression italic("^\\*([^*]+)\\*$");
+    QRegularExpressionMatch match = italic.match(cell);
+    return match.hasMatch() ? match.captured(1).trimmed() : QString();
+}
+
+static qsizetype phaseRow(const QStringList& lines, qsizetype header,
+                          qsizetype phaseColumn, const QString& name) {
+    for (qsizetype i = header + 1; i < lines.size(); ++i) {
+        QStringList cells = tableCells(lines[i]);
+        if (cells.isEmpty()) {
+            break;
+        }
+        QString phase = phaseName(cells.value(phaseColumn));
+        if (!phase.isEmpty() && phase.compare(name, Qt::CaseInsensitive) == 0) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+static QString tableRow(const QStringList& cells) {
+    QString row = "|";
+    for (const QString& cell : cells) {
+        row += cell.isEmpty() ? QString(" |") : " " + cell + " |";
+    }
+    return row;
+}
+
+static QString escapedCell(QString text) { return text.replace('|', "\\|"); }
+
+std::optional<QString> withPhase(const QString& projectText,
+                                 const QString& name, const QString& approach,
+                                 const QDate& day) {
+    static const QRegularExpression separator("^:?-{2,}");
+    static const QRegularExpression number("^(\\d+)\\.?$");
+    QStringList lines = projectText.split('\n');
+    QStringList columns;
+    const qsizetype header = phaseTableHeader(lines, columns);
     if (header < 0) {
         return std::nullopt;
     }
     const qsizetype phaseColumn = columns.indexOf("**Phase**");
+    if (phaseRow(lines, header, phaseColumn, name) >= 0) {
+        return projectText;
+    }
     const qsizetype numberColumn = columns.indexOf("S.no.");
 
     qsizetype last = header;
@@ -263,11 +314,6 @@ std::optional<QString> withPhase(const QString& projectText,
         if (phaseCell.contains(separator)) {
             continue;
         }
-        QRegularExpressionMatch match = italic.match(phaseCell);
-        if (match.hasMatch() && match.captured(1).trimmed().compare(
-                                    name, Qt::CaseInsensitive) == 0) {
-            return projectText;
-        }
         QRegularExpressionMatch numbered =
             number.match(cells.value(numberColumn));
         if (numbered.hasMatch()) {
@@ -282,24 +328,77 @@ std::optional<QString> withPhase(const QString& projectText,
     QString rowNumber = emptyRowNumber.isEmpty()
                             ? QString::number(highest + 1) + "."
                             : emptyRowNumber;
-    QString row = "|";
+    QStringList cells;
     for (const QString& column : columns) {
-        QString cell;
         if (column == "S.no.") {
-            cell = rowNumber;
+            cells.append(rowNumber);
         } else if (column == "**Phase**") {
-            cell = "*" + name + "*";
+            cells.append("*" + name + "*");
         } else if (column == "Start") {
-            cell = "[[" + day.toString("yyyy-MM-dd") + "]]";
+            cells.append("[[" + day.toString("yyyy-MM-dd") + "]]");
         } else if (column == "Status") {
-            cell = "In-Progress";
+            cells.append("In-Progress");
+        } else if (column == "Approach") {
+            cells.append(escapedCell(approach));
+        } else {
+            cells.append(QString());
         }
-        row += cell.isEmpty() ? QString(" |") : " " + cell + " |";
     }
     if (emptyRow >= 0) {
-        lines[emptyRow] = row;
+        lines[emptyRow] = tableRow(cells);
     } else {
-        lines.insert(last + 1, row);
+        lines.insert(last + 1, tableRow(cells));
     }
+    return lines.join('\n');
+}
+
+QString phaseApproach(const QString& projectText, const QString& name) {
+    QStringList lines = projectText.split('\n');
+    QStringList columns;
+    const qsizetype header = phaseTableHeader(lines, columns);
+    if (header < 0) {
+        return {};
+    }
+    const qsizetype row =
+        phaseRow(lines, header, columns.indexOf("**Phase**"), name);
+    if (row < 0) {
+        return {};
+    }
+    QString approach =
+        tableCells(lines[row]).value(columns.indexOf("Approach"));
+    return approach.replace("\\|", "|");
+}
+
+std::optional<QString> withPhaseStatus(const QString& projectText,
+                                       const QString& name,
+                                       const QString& status,
+                                       const QString& approach,
+                                       const QDate& day) {
+    QStringList lines = projectText.split('\n');
+    QStringList columns;
+    const qsizetype header = phaseTableHeader(lines, columns);
+    if (header < 0) {
+        return std::nullopt;
+    }
+    const qsizetype row =
+        phaseRow(lines, header, columns.indexOf("**Phase**"), name);
+    if (row < 0) {
+        return std::nullopt;
+    }
+    QStringList cells = tableCells(lines[row]);
+    while (cells.size() < columns.size()) {
+        cells.append(QString());
+    }
+    for (qsizetype c = 0; c < columns.size(); ++c) {
+        if (columns[c] == "Status") {
+            cells[c] = status;
+        } else if (columns[c] == "End" &&
+                   (status == "Done" || status == "Abandoned")) {
+            cells[c] = "[[" + day.toString("yyyy-MM-dd") + "]]";
+        } else if (columns[c] == "Approach") {
+            cells[c] = escapedCell(approach);
+        }
+    }
+    lines[row] = tableRow(cells);
     return lines.join('\n');
 }

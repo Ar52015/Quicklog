@@ -102,14 +102,28 @@ QStringList Backend::phases() const {
     if (vaultFolder().isEmpty() || m_currentFront.isEmpty()) {
         return {};
     }
-    QDir projects(QDir(vaultFolder()).filePath("Projects"));
-    return inProgressPhases(
-        readText(projects.filePath(m_currentFront + ".md")));
+    QString text = readText(projectPath(m_currentFront));
+    return inProgressPhases(text) + ::pausedPhases(text);
+}
+
+QStringList Backend::pausedPhases() const {
+    if (vaultFolder().isEmpty() || m_currentFront.isEmpty()) {
+        return {};
+    }
+    return ::pausedPhases(readText(projectPath(m_currentFront)));
 }
 
 QString Backend::defaultPhase() const {
-    return chooseDefaultPhase(phases(), readText(todayLogPath()),
-                              m_currentFront);
+    if (vaultFolder().isEmpty() || m_currentFront.isEmpty()) {
+        return {};
+    }
+    return chooseDefaultPhase(
+        inProgressPhases(readText(projectPath(m_currentFront))),
+        readText(todayLogPath()), m_currentFront);
+}
+
+QString Backend::projectPath(const QString& front) const {
+    return QDir(vaultFolder()).filePath("Projects/" + front + ".md");
 }
 
 void Backend::refresh() {
@@ -164,7 +178,8 @@ void Backend::openFront(const QString& front) {
     }
 }
 
-void Backend::addPhase(const QString& front, const QString& name) {
+void Backend::addPhase(const QString& front, const QString& name,
+                       const QString& approach) {
     if (front.isEmpty()) {
         emit failed("There's no front to add a phase to.");
         return;
@@ -175,14 +190,35 @@ void Backend::addPhase(const QString& front, const QString& name) {
         emit failed(error);
         return;
     }
-    QString path = QDir(vaultFolder()).filePath("Projects/" + front + ".md");
-    if (std::optional<QString> failure = addPhaseToProject(
-            path, phase, logDay(QDateTime::currentDateTime()))) {
+    if (std::optional<QString> failure =
+            addPhaseToProject(projectPath(front), phase, approach.trimmed(),
+                              logDay(QDateTime::currentDateTime()))) {
         emit failed(*failure);
         return;
     }
     emit phasesChanged();
     emit phaseAdded(phase);
+}
+
+QString Backend::phaseApproach(const QString& front,
+                               const QString& phase) const {
+    return ::phaseApproach(readText(projectPath(front)), phase);
+}
+
+void Backend::setPhaseStatus(const QString& front, const QString& phase,
+                             const QString& status, const QString& approach) {
+    if (front.isEmpty() || phase.isEmpty()) {
+        emit failed("Pick a phase first.");
+        return;
+    }
+    if (std::optional<QString> failure = setPhaseStatusInProject(
+            projectPath(front), phase, status, approach.trimmed(),
+            logDay(QDateTime::currentDateTime()))) {
+        emit failed(*failure);
+        return;
+    }
+    emit phasesChanged();
+    emit phaseStatusChanged(phase);
 }
 
 void Backend::addEntry(const QString& front, const QString& phase,

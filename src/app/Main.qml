@@ -16,7 +16,7 @@ Window {
     }
 
     width: 640
-    height: frontBox.y + frontBox.height + 12
+    height: statusRow.y + statusRow.height + 12
     visible: true
     title: "Quicklog"
     color: palette.window
@@ -69,6 +69,12 @@ Window {
         onNotice: message => window.noticeText = message
         onFrontAdded: front => Qt.callLater(() => frontBox.currentIndex = frontBox.find(front))
         onPhaseAdded: phase => Qt.callLater(() => phaseBox.currentIndex = phaseBox.find(phase))
+        onPhaseStatusChanged: phase => Qt.callLater(() => {
+                const index = phaseBox.find(phase);
+                if (index >= 0) {
+                    phaseBox.currentIndex = index;
+                }
+            })
     }
 
     TextField {
@@ -172,7 +178,7 @@ Window {
         property string chosen: ""
 
         function selectDefault() {
-            currentIndex = count > 1 ? Math.max(0, find(backend.defaultPhase)) : -1;
+            currentIndex = find(backend.defaultPhase);
         }
 
         anchors.top: frontBox.top
@@ -185,13 +191,14 @@ Window {
             focused: phaseBox.visualFocus
             hovered: phaseBox.hovered
         }
-        displayText: backend.phases.length === 0 ? "no phase in progress" : currentText
-        palette.buttonText: enabled && backend.phases.length === 0 ? field.placeholderTextColor : undefined
+        displayText: currentIndex < 0 ? "no phase in progress" : currentText
+        palette.buttonText: enabled && currentIndex < 0 ? field.placeholderTextColor : undefined
         enabled: backend.logExists
         onPhaseChanged: {
             if (phase !== "") {
                 chosen = phase;
             }
+            statusRow.reset();
         }
         onActivated: index => {
             if (index === count - 1) {
@@ -259,15 +266,98 @@ Window {
         onClosed: field.forceActiveFocus()
     }
 
-    NamePopup {
+    Row {
+        id: statusRow
+
+        readonly property string current: backend.pausedPhases.includes(phaseBox.phase) ? "Paused" : "In-Progress"
+        property string target: "In-Progress"
+
+        function reset() {
+            target = current;
+        }
+
+        function verb(phaseStatus) {
+            switch (phaseStatus) {
+            case "In-Progress":
+                return "Resume";
+            case "Paused":
+                return "Pause";
+            case "Abandoned":
+                return "Abandon";
+            }
+            return "Finish";
+        }
+
+        anchors.top: frontBox.bottom
+        anchors.left: field.left
+        anchors.topMargin: 8
+        spacing: 2
+        onCurrentChanged: reset()
+
+        Repeater {
+            model: ListModel {
+                ListElement {
+                    glyph: "▶️"
+                    phaseStatus: "In-Progress"
+                }
+                ListElement {
+                    glyph: "⏸️"
+                    phaseStatus: "Paused"
+                }
+                ListElement {
+                    glyph: "⏭️"
+                    phaseStatus: "Done"
+                }
+                ListElement {
+                    glyph: "⏹️"
+                    phaseStatus: "Abandoned"
+                }
+            }
+
+            EnterButton {
+                required property string glyph
+                required property string phaseStatus
+
+                width: 30
+                text: glyph
+                highlighted: statusRow.target === phaseStatus
+                enabled: backend.logExists && phaseBox.phase !== ""
+                opacity: enabled ? 1 : 0.4
+                onClicked: statusRow.target = phaseStatus
+            }
+        }
+    }
+
+    EnterButton {
+        id: statusButton
+
+        anchors.top: statusRow.top
+        anchors.right: field.right
+        width: 112
+        text: (statusRow.target === statusRow.current ? "finish" : statusRow.verb(statusRow.target).toLowerCase()) + " phase"
+        enabled: backend.logExists && phaseBox.phase !== "" && statusRow.target !== statusRow.current
+        onClicked: {
+            statusPopup.initialText = backend.phaseApproach(frontBox.front, phaseBox.phase);
+            statusPopup.open();
+        }
+    }
+
+    PhasePopup {
         id: newPhasePopup
 
         width: window.width - 24
-        placeholderText: "New phase name"
-        acceptText: "Add"
-        extraText: "Open in Obsidian"
-        onNameAccepted: name => backend.addPhase(frontBox.front, name)
-        onExtraClicked: backend.openFront(frontBox.front)
+        onPhaseAccepted: (name, approach) => backend.addPhase(frontBox.front, name, approach)
+        onOpenClicked: backend.openFront(frontBox.front)
+        onClosed: field.forceActiveFocus()
+    }
+
+    NamePopup {
+        id: statusPopup
+
+        width: window.width - 24
+        placeholderText: "Approach: what was done"
+        acceptText: statusRow.verb(statusRow.target)
+        onNameAccepted: approach => backend.setPhaseStatus(frontBox.front, phaseBox.phase, statusRow.target, approach)
         onClosed: field.forceActiveFocus()
     }
 

@@ -12,6 +12,7 @@ qt_add_qml_module(quicklog
         EnterButton.qml
         InputFrame.qml
         NamePopup.qml
+        PhasePopup.qml
         RosePine.qml
 )
 

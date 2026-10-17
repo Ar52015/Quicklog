@@ -21,6 +21,7 @@ class Backend : public QObject {
                    NOTIFY currentFrontChanged)
     Q_PROPERTY(QStringList phases READ phases NOTIFY phasesChanged)
     Q_PROPERTY(QString defaultPhase READ defaultPhase NOTIFY phasesChanged)
+    Q_PROPERTY(QStringList pausedPhases READ pausedPhases NOTIFY phasesChanged)
 
   public:
     QString vaultFolder() const;
@@ -29,6 +30,7 @@ class Backend : public QObject {
     QString currentFront() const;
     QStringList phases() const;
     QString defaultPhase() const;
+    QStringList pausedPhases() const;
 
     void setVaultFolder(const QString& folder);
     void setCurrentFront(const QString& front);
@@ -39,7 +41,13 @@ class Backend : public QObject {
     Q_INVOKABLE void refresh();
     Q_INVOKABLE void addFront(const QString& name);
     Q_INVOKABLE void openFront(const QString& front);
-    Q_INVOKABLE void addPhase(const QString& front, const QString& name);
+    Q_INVOKABLE void addPhase(const QString& front, const QString& name,
+                              const QString& approach);
+    Q_INVOKABLE QString phaseApproach(const QString& front,
+                                      const QString& phase) const;
+    Q_INVOKABLE void setPhaseStatus(const QString& front, const QString& phase,
+                                    const QString& status,
+                                    const QString& approach);
     Q_INVOKABLE void addEntry(const QString& front, const QString& phase,
                               const QString& type, const QString& text);
 
@@ -55,11 +63,13 @@ class Backend : public QObject {
     void entryAdded();
     void frontAdded(const QString& front);
     void phaseAdded(const QString& phase);
+    void phaseStatusChanged(const QString& phase);
     void failed(const QString& message);
     void notice(const QString& message);
 
   private:
     QString todayLogPath() const;
+    QString projectPath(const QString& front) const;
     void askForLog();
     QMap<QString, QString> readLogs() const;
     QString formatBullet(const QString& type, const QString& text) const;

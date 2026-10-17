@@ -15,13 +15,21 @@ QStringList orderFronts(const QStringList& fronts,
                         const QMap<QString, QString>& logs);
 bool isActiveProject(const QString& projectText);
 QStringList inProgressPhases(const QString& projectText);
+QStringList pausedPhases(const QString& projectText);
 QString chooseDefaultPhase(const QStringList& phases, const QString& todaysLog,
                            const QString& front);
 
 QString frontNameError(const QString& name);
 QString phaseNameError(const QString& name);
 std::optional<QString> withPhase(const QString& projectText,
-                                 const QString& name, const QDate& day);
+                                 const QString& name, const QString& approach,
+                                 const QDate& day);
+QString phaseApproach(const QString& projectText, const QString& name);
+std::optional<QString> withPhaseStatus(const QString& projectText,
+                                       const QString& name,
+                                       const QString& status,
+                                       const QString& approach,
+                                       const QDate& day);
 QDate logDay(const QDateTime& now);
 QString chooseDefaultFront(const QStringList& fronts,
                            const QMap<QString, QString>& logs);
