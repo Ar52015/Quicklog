@@ -1,7 +1,7 @@
 pragma ComponentBehavior: Bound
 
 import QtQuick
-import QtQuick.Controls
+import QtQuick.Controls.Fusion
 import QtQuick.Dialogs
 
 Window {
@@ -19,6 +19,34 @@ Window {
     height: 110
     visible: true
     title: "Quicklog"
+    color: palette.window
+    palette {
+        window: RosePine.base
+        base: RosePine.surface
+        alternateBase: RosePine.highlightLow
+        mid: RosePine.highlightHigh
+        dark: RosePine.muted
+        placeholderText: RosePine.subtle
+        button: RosePine.surface
+        highlight: RosePine.highlightMed
+        highlightedText: RosePine.text
+        link: RosePine.iris
+        active {
+            windowText: RosePine.text
+            text: RosePine.text
+            buttonText: RosePine.text
+        }
+        inactive {
+            windowText: RosePine.text
+            text: RosePine.text
+            buttonText: RosePine.text
+        }
+        disabled {
+            windowText: RosePine.muted
+            text: RosePine.muted
+            buttonText: RosePine.muted
+        }
+    }
 
     Component.onCompleted: {
         if (backend.vaultFolder === "") {
@@ -50,6 +78,9 @@ Window {
         placeholderText: "make an entry?"
         enabled: backend.logExists
         focus: true
+        background: InputFrame {
+            focused: field.activeFocus
+        }
         onTextChanged: {
             window.errorText = "";
             window.noticeText = "";
@@ -63,11 +94,12 @@ Window {
 
     Text {
         id: preview
-        color: window.errorText !== "" ? "red" : field.color
+        color: window.errorText !== "" ? RosePine.love : window.noticeText !== "" ? RosePine.foam : field.color
         anchors.top: field.bottom
         anchors.left: field.left
         anchors.right: field.right
         anchors.topMargin: 8
+        linkColor: RosePine.iris
         textFormat: window.errorText !== "" || window.noticeText !== "" ? Text.PlainText : Text.MarkdownText
         text: {
             if (window.errorText !== "") {
@@ -97,6 +129,10 @@ Window {
         anchors.topMargin: 8
         model: backend.fronts.concat(["+ front"])
         focusPolicy: Qt.TabFocus
+        background: InputFrame {
+            focused: frontBox.visualFocus
+            hovered: frontBox.hovered
+        }
         enabled: backend.logExists
         implicitContentWidthPolicy: ComboBox.WidestText
         onFrontChanged: {
@@ -128,8 +164,12 @@ Window {
         width: frontBox.width
         model: backend.phases.concat(["+ phase"])
         focusPolicy: Qt.TabFocus
+        background: InputFrame {
+            focused: phaseBox.visualFocus
+            hovered: phaseBox.hovered
+        }
         displayText: backend.phases.length === 0 ? "no phase in progress" : currentText
-        palette.buttonText: backend.phases.length === 0 ? field.placeholderTextColor : undefined
+        palette.buttonText: enabled && backend.phases.length === 0 ? field.placeholderTextColor : undefined
         enabled: backend.logExists
         onPhaseChanged: {
             if (phase !== "") {
@@ -212,6 +252,9 @@ Window {
                 id: newFrontName
                 width: newFrontPopup.availableWidth - createButton.width - cancelButton.width - 16
                 placeholderText: "New front name"
+                background: InputFrame {
+                    focused: newFrontName.activeFocus
+                }
                 onAccepted: createButton.clicked()
             }
 
