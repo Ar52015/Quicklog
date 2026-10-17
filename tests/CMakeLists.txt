@@ -1,0 +1,5 @@
+foreach(test tst_fronts tst_logedit tst_logfile tst_obsidian)
+    qt_add_executable(${test} ${test}.cpp)
+    target_link_libraries(${test} PRIVATE Qt6::Test quicklogcore)
+    add_test(NAME ${test} COMMAND ${test})
+endforeach()
