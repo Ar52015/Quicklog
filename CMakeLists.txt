@@ -12,6 +12,7 @@ qt_standard_project_setup(REQUIRES 6.11)
 qt_add_library(quicklogcore STATIC
     fronts.cpp fronts.h
     logedit.cpp logedit.h
+    logfile.cpp logfile.h
 )
 
 target_link_libraries(quicklogcore PUBLIC Qt6::Core)
@@ -42,3 +43,7 @@ add_test(NAME tst_fronts COMMAND tst_fronts)
 qt_add_executable(tst_logedit tst_logedit.cpp)
 target_link_libraries(tst_logedit PRIVATE Qt6::Test quicklogcore)
 add_test(NAME tst_logedit COMMAND tst_logedit)
+
+qt_add_executable(tst_logfile tst_logfile.cpp)
+target_link_libraries(tst_logfile PRIVATE Qt6::Test quicklogcore)
+add_test(NAME tst_logfile COMMAND tst_logfile)

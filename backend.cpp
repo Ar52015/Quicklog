@@ -1,5 +1,6 @@
 #include "backend.h"
 #include "fronts.h"
+#include "logfile.h"
 
 #include <QDateTime>
 #include <QDir>
@@ -104,6 +105,27 @@ void Backend::refresh() {
     emit logExistsChanged();
     emit frontsChanged();
     emit phasesChanged();
+}
+
+void Backend::addEntry(const QString& front, const QString& phase,
+                       const QString& text) {
+    if (!logExists()) {
+        emit entryFailed("Today's log doesn't exist yet. Create it in "
+                         "Obsidian, then press ↻.");
+        return;
+    }
+    if (front.isEmpty()) {
+        emit entryFailed("There's no front to add this to.");
+        return;
+    }
+    QString bullet =
+        text.trimmed().isEmpty() ? QString() : formatBullet(text.trimmed());
+    if (std::optional<QString> error = addToLog(
+            todayLogPath(), front, phase.isEmpty() ? "-" : phase, bullet)) {
+        emit entryFailed(*error);
+        return;
+    }
+    emit entryAdded();
 }
 
 QString Backend::formatBullet(const QString& text) const {

@@ -3,6 +3,14 @@ import QtQuick.Controls
 import QtQuick.Dialogs
 
 Window {
+    id: window
+
+    property string errorText: ""
+
+    function addEntry() {
+        backend.addEntry(frontBox.currentText, phaseBox.currentText, field.text);
+    }
+
     width: 640
     height: 110
     visible: true
@@ -19,6 +27,11 @@ Window {
         id: backend
         onFrontsChanged: Qt.callLater(frontBox.selectDefault)
         onPhasesChanged: Qt.callLater(phaseBox.selectDefault)
+        onEntryAdded: {
+            field.clear();
+            window.errorText = "";
+        }
+        onEntryFailed: message => window.errorText = message
     }
 
     TextField {
@@ -29,17 +42,31 @@ Window {
         anchors.margins: 12
         placeholderText: "make an entry?"
         enabled: backend.logExists
+        onTextChanged: window.errorText = ""
+        onAccepted: {
+            if (text.trim() !== "") {
+                window.addEntry();
+            }
+        }
     }
 
     Text {
         id: preview
-        color: field.color
+        color: window.errorText !== "" ? "red" : field.color
         anchors.top: field.bottom
         anchors.left: field.left
         anchors.right: field.right
         anchors.topMargin: 8
-        textFormat: Text.MarkdownText
-        text: backend.formatBullet(field.text)
+        textFormat: window.errorText !== "" ? Text.PlainText : Text.MarkdownText
+        text: {
+            if (window.errorText !== "") {
+                return window.errorText;
+            }
+            if (backend.logExists && addButton.hovered && field.text === "") {
+                return "Add front without logs?";
+            }
+            return backend.formatBullet(field.text);
+        }
     }
 
     ComboBox {
@@ -78,7 +105,9 @@ Window {
         spacing: 8
 
         Button {
+            id: addButton
             text: "+"
+            onClicked: window.addEntry()
         }
 
         Button {

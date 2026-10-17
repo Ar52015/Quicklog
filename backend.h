@@ -37,6 +37,8 @@ class Backend : public QObject {
 
     Q_INVOKABLE void setVaultFolderUrl(const QUrl& folder);
     Q_INVOKABLE void refresh();
+    Q_INVOKABLE void addEntry(const QString& front, const QString& phase,
+                              const QString& text);
 
     Q_INVOKABLE QString formatBullet(const QString& text) const;
 
@@ -46,6 +48,8 @@ class Backend : public QObject {
     void frontsChanged();
     void currentFrontChanged();
     void phasesChanged();
+    void entryAdded();
+    void entryFailed(const QString& message);
 
   private:
     QString todayLogPath() const;
