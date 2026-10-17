@@ -24,6 +24,7 @@ Window {
         window: RosePine.base
         base: RosePine.surface
         alternateBase: RosePine.highlightLow
+        light: RosePine.surface
         mid: RosePine.highlightHigh
         dark: RosePine.muted
         placeholderText: RosePine.subtle
