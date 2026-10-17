@@ -49,6 +49,7 @@ Window {
         anchors.margins: 12
         placeholderText: "make an entry?"
         enabled: backend.logExists
+        focus: true
         onTextChanged: {
             window.errorText = "";
             window.noticeText = "";
@@ -95,6 +96,7 @@ Window {
         anchors.left: field.left
         anchors.topMargin: 8
         model: backend.fronts.concat(["+ front"])
+        focusPolicy: Qt.TabFocus
         enabled: backend.logExists
         implicitContentWidthPolicy: ComboBox.WidestText
         onFrontChanged: {
@@ -125,6 +127,7 @@ Window {
         anchors.leftMargin: 8
         width: frontBox.width
         model: backend.phases.concat(["+ phase"])
+        focusPolicy: Qt.TabFocus
         enabled: backend.logExists
         onPhaseChanged: {
             if (phase !== "") {
@@ -198,6 +201,7 @@ Window {
             newFrontName.clear();
             newFrontName.forceActiveFocus();
         }
+        onClosed: field.forceActiveFocus()
 
         Row {
             spacing: 8
