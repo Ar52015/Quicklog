@@ -2,7 +2,7 @@ CPP_FILES := $(wildcard src/*/*.cpp src/*/*.h tests/*.cpp)
 QML_FILES := $(wildcard src/*/*.qml)
 QMLFORMAT := /usr/lib/qt6/bin/qmlformat
 
-.PHONY: build configure test run format lint clean release
+.PHONY: build configure test run format lint clean release install
 
 build: build/build.ninja
 	cmake --build --preset debug
@@ -33,3 +33,6 @@ clean:
 release:
 	cmake --preset release
 	cmake --build --preset release
+
+install: release
+	cmake --install build-release

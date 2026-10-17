@@ -19,3 +19,13 @@ target_link_libraries(quicklog PRIVATE Qt6::Quick quicklogcore)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(quicklog PRIVATE QUICKLOG_DEV)
 endif()
+
+install(TARGETS quicklog
+    BUNDLE DESTINATION .
+    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+
+configure_file(quicklog.desktop.in quicklog.desktop @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/quicklog.desktop
+    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+)

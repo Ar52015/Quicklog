@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=QuickLog
+Comment=Add a timestamped bullet to today's Obsidian log
+Exec=@CMAKE_INSTALL_FULL_BINDIR@/quicklog
+Terminal=false
+Categories=Utility;
