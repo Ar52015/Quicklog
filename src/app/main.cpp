@@ -7,6 +7,7 @@ int main(int argc, char* argv[]) {
     app.setOrganizationName("quicklog");
 #ifdef QUICKLOG_DEV
     app.setApplicationName("quicklog-dev");
+    app.setDesktopFileName("quicklog-dev");
 #endif
 
     QQmlApplicationEngine engine;
