@@ -42,8 +42,8 @@ class Backend : public QObject {
     Q_INVOKABLE void addEntry(const QString& front, const QString& phase,
                               const QString& type, const QString& text);
 
-    Q_INVOKABLE QString formatBullet(const QString& type,
-                                     const QString& text) const;
+    Q_INVOKABLE QString previewBullet(const QString& type,
+                                      const QString& text) const;
 
   signals:
     void vaultFolderChanged();
@@ -60,6 +60,7 @@ class Backend : public QObject {
     QString todayLogPath() const;
     void askForLog();
     QMap<QString, QString> readLogs() const;
+    QString formatBullet(const QString& type, const QString& text) const;
 
     QString m_currentFront;
 };

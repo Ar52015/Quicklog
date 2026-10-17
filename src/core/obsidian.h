@@ -7,5 +7,6 @@
 QUrl obsidianOpenUrl(const QString& notePath);
 QUrl obsidianDailyUrl(const QString& vaultName);
 QString vaultFolderFor(const QString& chosen);
+QString wikilinksAsLinks(QString markdown);
 
 #endif

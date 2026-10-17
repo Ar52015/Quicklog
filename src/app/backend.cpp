@@ -188,3 +188,7 @@ void Backend::addEntry(const QString& front, const QString& phase,
 QString Backend::formatBullet(const QString& type, const QString& text) const {
     return bulletLine(QTime::currentTime(), type, text);
 }
+
+QString Backend::previewBullet(const QString& type, const QString& text) const {
+    return wikilinksAsLinks(formatBullet(type, text));
+}

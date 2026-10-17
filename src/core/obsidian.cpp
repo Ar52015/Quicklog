@@ -1,6 +1,7 @@
 #include "obsidian.h"
 
 #include <QDir>
+#include <QRegularExpression>
 
 QUrl obsidianOpenUrl(const QString& notePath) {
     QString note = notePath;
@@ -25,4 +26,11 @@ QString vaultFolderFor(const QString& chosen) {
         return dir.absolutePath();
     }
     return {};
+}
+
+QString wikilinksAsLinks(QString markdown) {
+    static const QRegularExpression aliased(
+        R"((?<!!)\[\[[^\]|]+\|([^\]]+)\]\])");
+    static const QRegularExpression plain(R"((?<!!)\[\[([^\]|]+)\]\])");
+    return markdown.replace(aliased, "[\\1]()").replace(plain, "[\\1]()");
 }

@@ -121,7 +121,7 @@ Window {
                 if (backend.logExists && addButton.hovered && field.text === "") {
                     return "Add front without logs?";
                 }
-                return backend.formatBullet(window.entryType, field.text);
+                return backend.previewBullet(window.entryType, field.text);
             }
         }
 
