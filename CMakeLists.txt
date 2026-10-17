@@ -13,6 +13,7 @@ qt_add_library(quicklogcore STATIC
     fronts.cpp fronts.h
     logedit.cpp logedit.h
     logfile.cpp logfile.h
+    obsidian.cpp obsidian.h
 )
 
 target_link_libraries(quicklogcore PUBLIC Qt6::Core)
@@ -47,3 +48,7 @@ add_test(NAME tst_logedit COMMAND tst_logedit)
 qt_add_executable(tst_logfile tst_logfile.cpp)
 target_link_libraries(tst_logfile PRIVATE Qt6::Test quicklogcore)
 add_test(NAME tst_logfile COMMAND tst_logfile)
+
+qt_add_executable(tst_obsidian tst_obsidian.cpp)
+target_link_libraries(tst_obsidian PRIVATE Qt6::Test quicklogcore)
+add_test(NAME tst_obsidian COMMAND tst_obsidian)

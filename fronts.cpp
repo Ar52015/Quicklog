@@ -200,3 +200,20 @@ QString chooseDefaultFront(const QStringList& fronts,
     }
     return fronts.value(0);
 }
+
+QString frontNameError(const QString& name) {
+    static const QString forbidden = "\\/:*?\"<>|#^[]";
+    if (name.isEmpty()) {
+        return "Type a name for the new front.";
+    }
+    if (name.startsWith('.')) {
+        return "A front name can't start with a dot.";
+    }
+    for (QChar c : forbidden) {
+        if (name.contains(c)) {
+            return "A front name can't contain any of \\ / : * ? \" < > | # ^ "
+                   "[ ].";
+        }
+    }
+    return {};
+}

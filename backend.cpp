@@ -2,8 +2,10 @@
 #include "fronts.h"
 #include "logedit.h"
 #include "logfile.h"
+#include "obsidian.h"
 
 #include <QDateTime>
+#include <QDesktopServices>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -108,15 +110,45 @@ void Backend::refresh() {
     emit phasesChanged();
 }
 
+void Backend::addFront(const QString& name) {
+    QString front = name.trimmed();
+    QString error = frontNameError(front);
+    if (!error.isEmpty()) {
+        emit failed(error);
+        return;
+    }
+    QDir vault(vaultFolder());
+    QString file = "Projects/" + front + ".md";
+    if (QFile::exists(vault.filePath(file))) {
+        emit failed(file + " already exists.");
+        return;
+    }
+    if (!QFile::copy(vault.filePath("templates/project.md"),
+                     vault.filePath(file))) {
+        emit failed("Couldn't create " + file + " from templates/project.md.");
+        return;
+    }
+    emit frontsChanged();
+    emit frontAdded(front);
+    openFront(front);
+}
+
+void Backend::openFront(const QString& front) {
+    QString path = QDir(vaultFolder()).filePath("Projects/" + front + ".md");
+    if (!QDesktopServices::openUrl(obsidianOpenUrl(path))) {
+        emit failed("Couldn't open Obsidian.");
+    }
+}
+
 void Backend::addEntry(const QString& front, const QString& phase,
                        const QString& type, const QString& text) {
     if (!logExists()) {
-        emit entryFailed("Today's log doesn't exist yet. Create it in "
-                         "Obsidian, then press ↻.");
+        emit failed("Today's log doesn't exist yet. Create it in "
+                    "Obsidian, then press ↻.");
         return;
     }
     if (front.isEmpty()) {
-        emit entryFailed("There's no front to add this to.");
+        emit failed("There's no front to add this to.");
         return;
     }
     QString bullet = text.trimmed().isEmpty()
@@ -124,7 +156,7 @@ void Backend::addEntry(const QString& front, const QString& phase,
                          : formatBullet(type, text.trimmed());
     if (std::optional<QString> error = addToLog(
             todayLogPath(), front, phase.isEmpty() ? "-" : phase, bullet)) {
-        emit entryFailed(*error);
+        emit failed(*error);
         return;
     }
     emit entryAdded();

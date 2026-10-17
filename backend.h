@@ -37,6 +37,8 @@ class Backend : public QObject {
 
     Q_INVOKABLE void setVaultFolderUrl(const QUrl& folder);
     Q_INVOKABLE void refresh();
+    Q_INVOKABLE void addFront(const QString& name);
+    Q_INVOKABLE void openFront(const QString& front);
     Q_INVOKABLE void addEntry(const QString& front, const QString& phase,
                               const QString& type, const QString& text);
 
@@ -50,7 +52,8 @@ class Backend : public QObject {
     void currentFrontChanged();
     void phasesChanged();
     void entryAdded();
-    void entryFailed(const QString& message);
+    void frontAdded(const QString& front);
+    void failed(const QString& message);
 
   private:
     QString todayLogPath() const;

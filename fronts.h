@@ -17,6 +17,7 @@ QStringList inProgressPhases(const QString& projectText);
 QString chooseDefaultPhase(const QStringList& phases, const QString& todaysLog,
                            const QString& front);
 
+QString frontNameError(const QString& name);
 QDate logDay(const QDateTime& now);
 QString chooseDefaultFront(const QStringList& fronts,
                            const QMap<QString, QString>& logs);

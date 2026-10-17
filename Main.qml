@@ -11,7 +11,7 @@ Window {
     property string entryType: ""
 
     function addEntry() {
-        backend.addEntry(frontBox.currentText, phaseBox.currentText, entryType, field.text);
+        backend.addEntry(frontBox.front, phaseBox.phase, entryType, field.text);
     }
 
     width: 640
@@ -35,7 +35,8 @@ Window {
             window.entryType = "";
             window.errorText = "";
         }
-        onEntryFailed: message => window.errorText = message
+        onFailed: message => window.errorText = message
+        onFrontAdded: front => Qt.callLater(() => frontBox.currentIndex = frontBox.find(front))
     }
 
     TextField {
@@ -75,30 +76,63 @@ Window {
 
     ComboBox {
         id: frontBox
+
+        readonly property string front: currentIndex >= 0 && currentIndex < count - 1 ? currentText : ""
+
+        function selectDefault() {
+            currentIndex = count > 1 ? Math.max(0, find(backend.defaultFront)) : -1;
+        }
+
         anchors.top: preview.bottom
         anchors.left: field.left
         anchors.topMargin: 8
-        model: backend.fronts
+        model: backend.fronts.concat(["+ front"])
         enabled: backend.logExists
         implicitContentWidthPolicy: ComboBox.WidestText
-        onCurrentTextChanged: backend.currentFront = currentText
-
-        function selectDefault() {
-            currentIndex = Math.max(0, find(backend.defaultFront));
+        onFrontChanged: {
+            if (front !== "") {
+                backend.currentFront = front;
+            }
+        }
+        onActivated: index => {
+            if (index === count - 1) {
+                currentIndex = find(backend.currentFront);
+                newFrontPopup.open();
+            }
         }
     }
 
     ComboBox {
         id: phaseBox
+
+        readonly property string phase: currentIndex >= 0 && currentIndex < count - 1 ? currentText : ""
+        property string chosen: ""
+
+        function selectDefault() {
+            currentIndex = count > 1 ? Math.max(0, find(backend.defaultPhase)) : -1;
+        }
+
         anchors.top: frontBox.top
         anchors.left: frontBox.right
         anchors.leftMargin: 8
         width: frontBox.width
-        model: backend.phases
+        model: backend.phases.concat(["+ phase"])
         enabled: backend.logExists
-
-        function selectDefault() {
-            currentIndex = Math.max(0, find(backend.defaultPhase));
+        onPhaseChanged: {
+            if (phase !== "") {
+                chosen = phase;
+            }
+        }
+        onActivated: index => {
+            if (index === count - 1) {
+                backend.openFront(frontBox.front);
+                const previous = find(chosen);
+                if (previous >= 0) {
+                    currentIndex = previous;
+                } else {
+                    selectDefault();
+                }
+            }
         }
     }
 
@@ -137,6 +171,45 @@ Window {
             width: 48
             text: "↻"
             onClicked: backend.refresh()
+        }
+    }
+
+    Popup {
+        id: newFrontPopup
+
+        anchors.centerIn: Overlay.overlay
+        width: window.width - 24
+        modal: true
+        focus: true
+        onOpened: {
+            newFrontName.clear();
+            newFrontName.forceActiveFocus();
+        }
+
+        Row {
+            spacing: 8
+
+            TextField {
+                id: newFrontName
+                width: newFrontPopup.availableWidth - createButton.width - cancelButton.width - 16
+                placeholderText: "New front name"
+                onAccepted: createButton.clicked()
+            }
+
+            Button {
+                id: createButton
+                text: "Create"
+                onClicked: {
+                    backend.addFront(newFrontName.text);
+                    newFrontPopup.close();
+                }
+            }
+
+            Button {
+                id: cancelButton
+                text: "Cancel"
+                onClicked: newFrontPopup.close()
+            }
         }
     }
 

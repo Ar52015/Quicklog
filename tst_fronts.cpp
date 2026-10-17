@@ -23,6 +23,8 @@ class TestFronts : public QObject {
     void logDays();
     void defaultFronts_data();
     void defaultFronts();
+    void frontNames_data();
+    void frontNames();
 };
 
 void TestFronts::newestFirst() {
@@ -282,6 +284,28 @@ void TestFronts::defaultFronts() {
     QMap<QString, QString> logs = {{"2026-01-01", older},
                                    {"2026-01-02", newer}};
     QCOMPARE(chooseDefaultFront(fronts, logs), expected);
+}
+
+void TestFronts::frontNames_data() {
+    QTest::addColumn<QString>("name");
+    QTest::addColumn<bool>("valid");
+
+    QTest::newRow("plain") << "Cogwars" << true;
+    QTest::newRow("spaces and dashes") << "Interview Prep-2" << true;
+    QTest::newRow("empty") << "" << false;
+    QTest::newRow("slash") << "a/b" << false;
+    QTest::newRow("backslash") << "a\\b" << false;
+    QTest::newRow("colon") << "a:b" << false;
+    QTest::newRow("link brackets") << "a[b]" << false;
+    QTest::newRow("hash") << "a#b" << false;
+    QTest::newRow("leading dot") << ".hidden" << false;
+}
+
+void TestFronts::frontNames() {
+    QFETCH(QString, name);
+    QFETCH(bool, valid);
+
+    QCOMPARE(frontNameError(name).isEmpty(), valid);
 }
 
 QTEST_GUILESS_MAIN(TestFronts)
