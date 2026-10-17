@@ -211,6 +211,7 @@ void TestFronts::defaultFronts_data() {
     QTest::addColumn<QString>("expected");
 
     QStringList ab = {"A", "B"};
+    const QString emptyBullet = "- \\[ 12:55 AM \\] - \n";
     QTest::newRow("latest time wins") << ab << "" << R"(### What's done today
 **A:**
 - \[ 10:00 AM \] - x
@@ -224,13 +225,12 @@ void TestFronts::defaultFronts_data() {
 **A:**
 - \[ 11:41 PM \] - x
 )" << "B";
-    QTest::newRow("empty bullet ignored")
-        << ab << "" << R"(### What's done today
+    QTest::newRow("empty bullet ignored") << ab << ""
+                                          << R"(### What's done today
 **A:**
 - \[ 11:41 PM \] - x
 **B:**
-- \[ 12:55 AM \] - 
-)" << "A";
+)" + emptyBullet << "A";
     QTest::newRow("older log when today has none")
         << ab << R"(### What's done today
 **B:**
