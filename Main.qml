@@ -12,10 +12,13 @@ Window {
         if (backend.vaultFolder === "") {
             folderDialog.open();
         }
+        Qt.callLater(frontBox.selectDefault);
     }
 
     Backend {
         id: backend
+        onFrontsChanged: Qt.callLater(frontBox.selectDefault)
+        onPhasesChanged: Qt.callLater(phaseBox.selectDefault)
     }
 
     TextField {
@@ -40,12 +43,32 @@ Window {
     }
 
     ComboBox {
+        id: frontBox
         anchors.top: preview.bottom
         anchors.left: field.left
         anchors.topMargin: 8
         model: backend.fronts
         enabled: backend.logExists
         implicitContentWidthPolicy: ComboBox.WidestText
+        onCurrentTextChanged: backend.currentFront = currentText
+
+        function selectDefault() {
+            currentIndex = Math.max(0, find(backend.defaultFront));
+        }
+    }
+
+    ComboBox {
+        id: phaseBox
+        anchors.top: frontBox.top
+        anchors.left: frontBox.right
+        anchors.leftMargin: 8
+        width: frontBox.width
+        model: backend.phases
+        enabled: backend.logExists
+
+        function selectDefault() {
+            currentIndex = Math.max(0, find(backend.defaultPhase));
+        }
     }
 
     Row {

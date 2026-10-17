@@ -17,6 +17,12 @@ class TestFronts : public QObject {
     void activeProjects();
     void phaseTables_data();
     void phaseTables();
+    void defaultPhases_data();
+    void defaultPhases();
+    void logDays_data();
+    void logDays();
+    void defaultFronts_data();
+    void defaultFronts();
 };
 
 void TestFronts::newestFirst() {
@@ -143,6 +149,139 @@ void TestFronts::phaseTables() {
     QFETCH(QStringList, phases);
 
     QCOMPARE(inProgressPhases(text), phases);
+}
+
+void TestFronts::defaultPhases_data() {
+    QTest::addColumn<QStringList>("phases");
+    QTest::addColumn<QString>("log");
+    QTest::addColumn<QString>("expected");
+
+    QStringList ab = {"a", "b"};
+    QTest::newRow("today's row") << ab << "| F | b | | |\n" << "b";
+    QTest::newRow("no log today") << ab << "" << "a";
+    QTest::newRow("row for another front") << ab << "| G | b | | |\n" << "a";
+    QTest::newRow("today's phase not in progress") << ab << "| F | old | | |\n"
+                                                   << "a";
+    QTest::newRow("last row wins")
+        << QStringList({"b", "a"}) << "| F | b | | |\n| F | a | | |\n"
+        << "a";
+    QTest::newRow("front cell cleaned") << ab << "| **F:** | b | | |\n" << "b";
+    QTest::newRow("commented row ignored") << ab << "<!--\n| F | b | | |\n-->\n"
+                                           << "a";
+    QTest::newRow("no phases") << QStringList() << "| F | b | | |\n" << "";
+}
+
+void TestFronts::defaultPhases() {
+    QFETCH(QStringList, phases);
+    QFETCH(QString, log);
+    QFETCH(QString, expected);
+
+    QCOMPARE(chooseDefaultPhase(phases, log, "F"), expected);
+}
+
+void TestFronts::logDays_data() {
+    QTest::addColumn<QDateTime>("now");
+    QTest::addColumn<QDate>("day");
+
+    QDate oct16(2026, 10, 16);
+    QDate oct17(2026, 10, 17);
+    QTest::newRow("evening") << QDateTime(oct16, QTime(23, 59)) << oct16;
+    QTest::newRow("midnight") << QDateTime(oct17, QTime(0, 0)) << oct16;
+    QTest::newRow("4 AM") << QDateTime(oct17, QTime(4, 0)) << oct16;
+    QTest::newRow("just before 6 AM")
+        << QDateTime(oct17, QTime(5, 59, 59)) << oct16;
+    QTest::newRow("6 AM") << QDateTime(oct17, QTime(6, 0)) << oct17;
+    QTest::newRow("new month")
+        << QDateTime(QDate(2026, 11, 1), QTime(3, 0)) << QDate(2026, 10, 31);
+}
+
+void TestFronts::logDays() {
+    QFETCH(QDateTime, now);
+    QFETCH(QDate, day);
+
+    QCOMPARE(logDay(now), day);
+}
+
+void TestFronts::defaultFronts_data() {
+    QTest::addColumn<QStringList>("fronts");
+    QTest::addColumn<QString>("older");
+    QTest::addColumn<QString>("newer");
+    QTest::addColumn<QString>("expected");
+
+    QStringList ab = {"A", "B"};
+    QTest::newRow("latest time wins") << ab << "" << R"(### What's done today
+**A:**
+- \[ 10:00 AM \] - x
+**B:**
+- \[ 09:00 PM \] - y
+)" << "B";
+    QTest::newRow("after midnight is later")
+        << ab << "" << R"(### What's done today
+**B:**
+- \[ 12:55 AM \] - y
+**A:**
+- \[ 11:41 PM \] - x
+)" << "B";
+    QTest::newRow("empty bullet ignored")
+        << ab << "" << R"(### What's done today
+**A:**
+- \[ 11:41 PM \] - x
+**B:**
+- \[ 12:55 AM \] - 
+)" << "A";
+    QTest::newRow("older log when today has none")
+        << ab << R"(### What's done today
+**B:**
+- \[ 10:00 AM \] - y
+)" << R"(### What's done today
+**Front name:**
+- task
+)" << "B";
+    QTest::newRow("newest log wins") << ab << R"(### What's done today
+**A:**
+- \[ 11:00 PM \] - x
+)" << R"(### What's done today
+**B:**
+- \[ 09:00 AM \] - y
+)" << "B";
+    QTest::newRow("front not in the list")
+        << ab << "" << R"(### What's done today
+**Ghost:**
+- \[ 10:00 AM \] - x
+)" << "A";
+    QTest::newRow("no bullets") << ab << "" << "" << "A";
+    QTest::newRow("other sections ignored") << ab << "" << R"(### Plans
+**A:**
+- \[ 11:00 PM \] - x
+### What's done today
+**B:**
+- \[ 09:00 AM \] - y
+)" << "B";
+    QTest::newRow("front name cleaned") << QStringList({"A", "Interview-Prep"})
+                                        << "" << R"(### What's done today
+**Interview prep:**
+- \[ 10:00 AM \] - x
+)" << "Interview-Prep";
+    QTest::newRow("commented bullet ignored")
+        << ab << "" << R"(### What's done today
+**B:**
+- \[ 09:00 AM \] - y
+<!--
+**A:**
+- \[ 11:00 PM \] - x
+-->
+)" << "B";
+}
+
+void TestFronts::defaultFronts() {
+    QFETCH(QStringList, fronts);
+    QFETCH(QString, older);
+    QFETCH(QString, newer);
+    QFETCH(QString, expected);
+
+    QMap<QString, QString> logs = {{"2026-01-01", older},
+                                   {"2026-01-02", newer}};
+    QCOMPARE(chooseDefaultFront(fronts, logs), expected);
 }
 
 QTEST_GUILESS_MAIN(TestFronts)

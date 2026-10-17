@@ -1,7 +1,7 @@
 #include "backend.h"
 #include "fronts.h"
 
-#include <QDate>
+#include <QDateTime>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -34,12 +34,17 @@ void Backend::setVaultFolderUrl(const QUrl& folder) {
     setVaultFolder(folder.toLocalFile());
 }
 
+QString Backend::todayLogPath() const {
+    QString name =
+        logDay(QDateTime::currentDateTime()).toString("yyyy-MM-dd") + ".md";
+    return QDir(vaultFolder()).filePath("Logs/" + name);
+}
+
 bool Backend::logExists() const {
     if (vaultFolder().isEmpty()) {
         return false;
     }
-    QString name = QDate::currentDate().toString("yyyy-MM-dd") + ".md";
-    return QFile::exists(QDir(vaultFolder()).filePath("Logs/" + name));
+    return QFile::exists(todayLogPath());
 }
 
 QStringList Backend::fronts() const {
@@ -54,20 +59,51 @@ QStringList Backend::fronts() const {
             names.append(file.completeBaseName());
         }
     }
+    return orderFronts(names, readLogs());
+}
+
+QString Backend::defaultFront() const {
+    return chooseDefaultFront(fronts(), readLogs());
+}
+
+QMap<QString, QString> Backend::readLogs() const {
     QDir logDir(QDir(vaultFolder()).filePath("Logs"));
     QMap<QString, QString> logs;
     for (const QFileInfo& file : logDir.entryInfoList({"*.md"}, QDir::Files)) {
-        QFile log(file.filePath());
-        if (log.open(QIODevice::ReadOnly)) {
-            logs.insert(file.completeBaseName(), readText(file.filePath()));
-        }
+        logs.insert(file.completeBaseName(), readText(file.filePath()));
     }
-    return orderFronts(names, logs);
+    return logs;
+}
+
+QString Backend::currentFront() const { return m_currentFront; }
+
+void Backend::setCurrentFront(const QString& front) {
+    if (front == m_currentFront) {
+        return;
+    }
+    m_currentFront = front;
+    emit currentFrontChanged();
+    emit phasesChanged();
+}
+
+QStringList Backend::phases() const {
+    if (vaultFolder().isEmpty() || m_currentFront.isEmpty()) {
+        return {};
+    }
+    QDir projects(QDir(vaultFolder()).filePath("Projects"));
+    return inProgressPhases(
+        readText(projects.filePath(m_currentFront + ".md")));
+}
+
+QString Backend::defaultPhase() const {
+    return chooseDefaultPhase(phases(), readText(todayLogPath()),
+                              m_currentFront);
 }
 
 void Backend::refresh() {
     emit logExistsChanged();
     emit frontsChanged();
+    emit phasesChanged();
 }
 
 QString Backend::formatBullet(const QString& text) const {
