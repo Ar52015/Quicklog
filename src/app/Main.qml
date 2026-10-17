@@ -159,7 +159,7 @@ Window {
             Repeater {
                 model: ["📌", "❓", "💡", "🐛"]
 
-                Button {
+                EnterButton {
                     required property string modelData
 
                     width: 30
@@ -172,14 +172,14 @@ Window {
             }
         }
 
-        Button {
+        EnterButton {
             id: addButton
             width: 48
             text: "+"
             onClicked: window.addEntry()
         }
 
-        Button {
+        EnterButton {
             width: 48
             text: "↻"
             onClicked: {
@@ -213,7 +213,7 @@ Window {
                 onAccepted: createButton.clicked()
             }
 
-            Button {
+            EnterButton {
                 id: createButton
                 text: "Create"
                 onClicked: {
@@ -222,7 +222,7 @@ Window {
                 }
             }
 
-            Button {
+            EnterButton {
                 id: cancelButton
                 text: "Cancel"
                 onClicked: newFrontPopup.close()

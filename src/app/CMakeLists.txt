@@ -7,6 +7,7 @@ qt_add_qml_module(quicklog
     URI Quicklog
     QML_FILES
         Main.qml
+        EnterButton.qml
 )
 
 target_link_libraries(quicklog PRIVATE Qt6::Quick quicklogcore)
