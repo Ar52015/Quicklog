@@ -4,7 +4,7 @@
 #include <QRegularExpression>
 #include <algorithm>
 
-static QString normFront(QString cell) {
+QString normFront(QString cell) {
     static const QHash<QString, QString> alias = {
         {"nemoclaw-codecious", "Nemoclaw-Codeacious"},
         {"interview prep", "Interview-Prep"},
@@ -19,7 +19,7 @@ static QString normFront(QString cell) {
     return alias.value(cell.toLower(), cell);
 }
 
-static QStringList tableCells(const QString& line) {
+QStringList tableCells(const QString& line) {
     QString row = line.trimmed();
     if (!row.startsWith('|')) {
         return {};

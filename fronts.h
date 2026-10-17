@@ -7,6 +7,9 @@
 #include <QString>
 #include <QStringList>
 
+QString normFront(QString cell);
+QStringList tableCells(const QString& line);
+
 QStringList orderFronts(const QStringList& fronts,
                         const QMap<QString, QString>& logs);
 bool isActiveProject(const QString& projectText);
