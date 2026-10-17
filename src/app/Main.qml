@@ -68,6 +68,7 @@ Window {
         onFailed: message => window.errorText = message
         onNotice: message => window.noticeText = message
         onFrontAdded: front => Qt.callLater(() => frontBox.currentIndex = frontBox.find(front))
+        onPhaseAdded: phase => Qt.callLater(() => phaseBox.currentIndex = phaseBox.find(phase))
     }
 
     TextField {
@@ -194,7 +195,7 @@ Window {
         }
         onActivated: index => {
             if (index === count - 1) {
-                backend.openFront(frontBox.front);
+                newPhasePopup.open();
                 const previous = find(chosen);
                 if (previous >= 0) {
                     currentIndex = previous;
@@ -248,47 +249,26 @@ Window {
         }
     }
 
-    Popup {
+    NamePopup {
         id: newFrontPopup
 
-        anchors.centerIn: Overlay.overlay
         width: window.width - 24
-        modal: true
-        focus: true
-        onOpened: {
-            newFrontName.clear();
-            newFrontName.forceActiveFocus();
-        }
+        placeholderText: "New front name"
+        acceptText: "Create"
+        onNameAccepted: name => backend.addFront(name)
         onClosed: field.forceActiveFocus()
+    }
 
-        Row {
-            spacing: 8
+    NamePopup {
+        id: newPhasePopup
 
-            TextField {
-                id: newFrontName
-                width: newFrontPopup.availableWidth - createButton.width - cancelButton.width - 16
-                placeholderText: "New front name"
-                background: InputFrame {
-                    focused: newFrontName.activeFocus
-                }
-                onAccepted: createButton.clicked()
-            }
-
-            EnterButton {
-                id: createButton
-                text: "Create"
-                onClicked: {
-                    backend.addFront(newFrontName.text);
-                    newFrontPopup.close();
-                }
-            }
-
-            EnterButton {
-                id: cancelButton
-                text: "Cancel"
-                onClicked: newFrontPopup.close()
-            }
-        }
+        width: window.width - 24
+        placeholderText: "New phase name"
+        acceptText: "Add"
+        extraText: "Open in Obsidian"
+        onNameAccepted: name => backend.addPhase(frontBox.front, name)
+        onExtraClicked: backend.openFront(frontBox.front)
+        onClosed: field.forceActiveFocus()
     }
 
     FolderDialog {

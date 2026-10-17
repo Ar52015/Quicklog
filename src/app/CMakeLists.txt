@@ -11,6 +11,7 @@ qt_add_qml_module(quicklog
         Main.qml
         EnterButton.qml
         InputFrame.qml
+        NamePopup.qml
         RosePine.qml
 )
 

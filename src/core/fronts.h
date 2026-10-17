@@ -6,6 +6,7 @@
 #include <QMap>
 #include <QString>
 #include <QStringList>
+#include <optional>
 
 QString normFront(QString cell);
 QStringList tableCells(const QString& line);
@@ -18,6 +19,9 @@ QString chooseDefaultPhase(const QStringList& phases, const QString& todaysLog,
                            const QString& front);
 
 QString frontNameError(const QString& name);
+QString phaseNameError(const QString& name);
+std::optional<QString> withPhase(const QString& projectText,
+                                 const QString& name, const QDate& day);
 QDate logDay(const QDateTime& now);
 QString chooseDefaultFront(const QStringList& fronts,
                            const QMap<QString, QString>& logs);

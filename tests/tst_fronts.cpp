@@ -25,6 +25,12 @@ class TestFronts : public QObject {
     void defaultFronts();
     void frontNames_data();
     void frontNames();
+    void phaseNames_data();
+    void phaseNames();
+    void newPhases_data();
+    void newPhases();
+    void newPhaseNeedsATable();
+    void newPhaseIsInProgress();
 };
 
 void TestFronts::newestFirst() {
@@ -306,6 +312,92 @@ void TestFronts::frontNames() {
     QFETCH(bool, valid);
 
     QCOMPARE(frontNameError(name).isEmpty(), valid);
+}
+
+void TestFronts::phaseNames_data() {
+    QTest::addColumn<QString>("name");
+    QTest::addColumn<bool>("valid");
+
+    QTest::newRow("plain") << "module-2" << true;
+    QTest::newRow("spaces and capitals")
+        << "the problems of philosophy - Russell" << true;
+    QTest::newRow("empty") << "" << false;
+    QTest::newRow("pipe") << "a|b" << false;
+    QTest::newRow("asterisk") << "a*b" << false;
+}
+
+void TestFronts::phaseNames() {
+    QFETCH(QString, name);
+    QFETCH(bool, valid);
+    QCOMPARE(phaseNameError(name).isEmpty(), valid);
+}
+
+void TestFronts::newPhases_data() {
+    QTest::addColumn<QString>("project");
+    QTest::addColumn<QString>("name");
+    QTest::addColumn<QString>("expected");
+
+    const QString header =
+        "| S.no. | **Phase** | Start | End | Status | Approach |\n"
+        "| :---: | --------- | ----- | --- | ------ | -------- |\n";
+    const QString rows =
+        "|  1.   | *setup* | [[2026-10-09]] | [[2026-10-11]] | Done | x |\n"
+        "|  2.   | *build* | [[2026-10-11]] |  | In-Progress |  |\n";
+    const QString after = "\n---\n## What the project is\n";
+    const QString added =
+        "| 3. | *ship* | [[2026-10-18]] | | In-Progress | |\n";
+
+    QTest::newRow("appends after the last row")
+        << header + rows + after << "ship" << header + rows + added + after;
+    QTest::newRow("fills the template's empty row")
+        << header +
+               "|  1.   |           |       |     |        |          |\n" +
+               after
+        << "ship"
+        << header + "| 1. | *ship* | [[2026-10-18]] | | In-Progress | |\n" +
+               after;
+    QTest::newRow("fills a trailing blank row")
+        << header + rows + "|  3.   |  |  |  |  |  |\n" + after << "ship"
+        << header + rows + added + after;
+    QTest::newRow("counts past nine")
+        << header + "|  10.  | *ten* | [[2026-10-01]] |  | Done |  |\n" + after
+        << "ship"
+        << header + "|  10.  | *ten* | [[2026-10-01]] |  | Done |  |\n" +
+               "| 11. | *ship* | [[2026-10-18]] | | In-Progress | |\n" + after;
+    QTest::newRow("no Approach column")
+        << "| S.no. | **Phase** | Start | End | Status |\n"
+           "| :---: | --- | --- | --- | --- |\n"
+           "|  1.  | *book* | [[2026-10-05]] | [[2026-10-05]] | Done |\n"
+        << "next book"
+        << "| S.no. | **Phase** | Start | End | Status |\n"
+           "| :---: | --- | --- | --- | --- |\n"
+           "|  1.  | *book* | [[2026-10-05]] | [[2026-10-05]] | Done |\n"
+           "| 2. | *next book* | [[2026-10-18]] | | In-Progress |\n";
+    QTest::newRow("existing name in any case is unchanged")
+        << header + rows + after << "SETUP" << header + rows + after;
+}
+
+void TestFronts::newPhases() {
+    QFETCH(QString, project);
+    QFETCH(QString, name);
+    QFETCH(QString, expected);
+    QCOMPARE(withPhase(project, name, QDate(2026, 10, 18)).value_or("none"),
+             expected);
+}
+
+void TestFronts::newPhaseNeedsATable() {
+    QVERIFY(!withPhase("---\nStatus: in-progress\n---\n# Notes\n", "ship",
+                       QDate(2026, 10, 18)));
+}
+
+void TestFronts::newPhaseIsInProgress() {
+    const QString project =
+        "| S.no. | **Phase** | Start | End | Status | Approach |\n"
+        "| :---: | --- | --- | --- | --- | --- |\n"
+        "|  1.  | *setup* | [[2026-10-09]] | [[2026-10-11]] | Done | x |\n";
+    const QString added =
+        withPhase(project, "ship", QDate(2026, 10, 18)).value_or("");
+    QCOMPARE(inProgressPhases(added), QStringList{"ship"});
 }
 
 QTEST_GUILESS_MAIN(TestFronts)

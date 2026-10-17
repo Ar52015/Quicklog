@@ -39,6 +39,7 @@ class Backend : public QObject {
     Q_INVOKABLE void refresh();
     Q_INVOKABLE void addFront(const QString& name);
     Q_INVOKABLE void openFront(const QString& front);
+    Q_INVOKABLE void addPhase(const QString& front, const QString& name);
     Q_INVOKABLE void addEntry(const QString& front, const QString& phase,
                               const QString& type, const QString& text);
 
@@ -53,6 +54,7 @@ class Backend : public QObject {
     void phasesChanged();
     void entryAdded();
     void frontAdded(const QString& front);
+    void phaseAdded(const QString& phase);
     void failed(const QString& message);
     void notice(const QString& message);
 

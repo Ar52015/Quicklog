@@ -217,3 +217,89 @@ QString frontNameError(const QString& name) {
     }
     return {};
 }
+
+QString phaseNameError(const QString& name) {
+    if (name.isEmpty()) {
+        return "Type a name for the new phase.";
+    }
+    if (name.contains('|') || name.contains('*')) {
+        return "A phase name can't contain | or *.";
+    }
+    return {};
+}
+
+std::optional<QString> withPhase(const QString& projectText,
+                                 const QString& name, const QDate& day) {
+    static const QRegularExpression separator("^:?-{2,}");
+    static const QRegularExpression italic("^\\*([^*]+)\\*$");
+    static const QRegularExpression number("^(\\d+)\\.?$");
+    QStringList lines = projectText.split('\n');
+    qsizetype header = -1;
+    QStringList columns;
+    for (qsizetype i = 0; i < lines.size(); ++i) {
+        columns = tableCells(lines[i]);
+        if (columns.contains("**Phase**")) {
+            header = i;
+            break;
+        }
+    }
+    if (header < 0) {
+        return std::nullopt;
+    }
+    const qsizetype phaseColumn = columns.indexOf("**Phase**");
+    const qsizetype numberColumn = columns.indexOf("S.no.");
+
+    qsizetype last = header;
+    qsizetype emptyRow = -1;
+    QString emptyRowNumber;
+    int highest = 0;
+    for (qsizetype i = header + 1; i < lines.size(); ++i) {
+        QStringList cells = tableCells(lines[i]);
+        if (cells.isEmpty()) {
+            break;
+        }
+        last = i;
+        QString phaseCell = cells.value(phaseColumn);
+        if (phaseCell.contains(separator)) {
+            continue;
+        }
+        QRegularExpressionMatch match = italic.match(phaseCell);
+        if (match.hasMatch() && match.captured(1).trimmed().compare(
+                                    name, Qt::CaseInsensitive) == 0) {
+            return projectText;
+        }
+        QRegularExpressionMatch numbered =
+            number.match(cells.value(numberColumn));
+        if (numbered.hasMatch()) {
+            highest = qMax(highest, numbered.captured(1).toInt());
+        }
+        if (phaseCell.isEmpty() && emptyRow < 0) {
+            emptyRow = i;
+            emptyRowNumber = cells.value(numberColumn);
+        }
+    }
+
+    QString rowNumber = emptyRowNumber.isEmpty()
+                            ? QString::number(highest + 1) + "."
+                            : emptyRowNumber;
+    QString row = "|";
+    for (const QString& column : columns) {
+        QString cell;
+        if (column == "S.no.") {
+            cell = rowNumber;
+        } else if (column == "**Phase**") {
+            cell = "*" + name + "*";
+        } else if (column == "Start") {
+            cell = "[[" + day.toString("yyyy-MM-dd") + "]]";
+        } else if (column == "Status") {
+            cell = "In-Progress";
+        }
+        row += cell.isEmpty() ? QString(" |") : " " + cell + " |";
+    }
+    if (emptyRow >= 0) {
+        lines[emptyRow] = row;
+    } else {
+        lines.insert(last + 1, row);
+    }
+    return lines.join('\n');
+}

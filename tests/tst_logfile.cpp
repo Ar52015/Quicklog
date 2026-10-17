@@ -33,10 +33,15 @@ class TestLogFile : public QObject {
     void writesUtf8();
     void failedWriteLeavesFileUnchanged();
     void missingLogIsAnError();
+    void addsThePhase();
+    void phaseKeepsCrlf();
+    void existingPhaseIsAnError();
+    void projectWithoutTableIsAnError();
 
   private:
     std::unique_ptr<QTemporaryDir> dir;
     QString log;
+    QString project;
 };
 
 void TestLogFile::init() {
@@ -44,6 +49,8 @@ void TestLogFile::init() {
     QVERIFY(dir->isValid());
     log = dir->filePath("today.md");
     QVERIFY(QFile::copy(QFINDTESTDATA("testdata/today.md"), log));
+    project = dir->filePath("Quicklog.md");
+    QVERIFY(QFile::copy(QFINDTESTDATA("testdata/project.md"), project));
 }
 
 void TestLogFile::writesTheEntry() {
@@ -111,6 +118,46 @@ void TestLogFile::missingLogIsAnError() {
         addToLog(dir->filePath("missing.md"), "Quicklog", "m", bullet);
     QVERIFY(error);
     QVERIFY2(error->startsWith("Couldn't read"), qPrintable(*error));
+}
+
+void TestLogFile::addsThePhase() {
+    std::optional<QString> error =
+        addPhaseToProject(project, "ship", QDate(2026, 10, 18));
+    QVERIFY2(!error, qPrintable(error.value_or("")));
+    QCOMPARE(readBytes(project),
+             readBytes(QFINDTESTDATA("testdata/project-ship.md")));
+}
+
+void TestLogFile::phaseKeepsCrlf() {
+    QByteArray crlf = readBytes(project).replace("\n", "\r\n");
+    QVERIFY(writeBytes(project, crlf));
+    std::optional<QString> error =
+        addPhaseToProject(project, "ship", QDate(2026, 10, 18));
+    QVERIFY2(!error, qPrintable(error.value_or("")));
+    QByteArray bytes = readBytes(project);
+    QVERIFY(bytes.contains(
+        "| 3. | *ship* | [[2026-10-18]] | | In-Progress | |\r\n"));
+    QVERIFY(!bytes.replace("\r\n", "").contains('\n'));
+}
+
+void TestLogFile::existingPhaseIsAnError() {
+    QByteArray before = readBytes(project);
+    std::optional<QString> error =
+        addPhaseToProject(project, "Setup", QDate(2026, 10, 18));
+    QCOMPARE(error.value_or(""), "Setup is already a phase in Quicklog.md.");
+    QCOMPARE(readBytes(project), before);
+}
+
+void TestLogFile::projectWithoutTableIsAnError() {
+    QVERIFY(writeBytes(project, "# Notes\n\nNo table here.\n"));
+    std::optional<QString> error =
+        addPhaseToProject(project, "ship", QDate(2026, 10, 18));
+    QCOMPARE(error.value_or(""), "Quicklog.md has no phase table.");
+    QVERIFY2(!addPhaseToProject(dir->filePath("Missing.md"), "ship",
+                                QDate(2026, 10, 18))
+                  .value_or("")
+                  .isEmpty(),
+             "a missing project file should be an error");
 }
 
 QTEST_GUILESS_MAIN(TestLogFile)

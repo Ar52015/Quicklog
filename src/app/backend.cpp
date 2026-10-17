@@ -164,6 +164,27 @@ void Backend::openFront(const QString& front) {
     }
 }
 
+void Backend::addPhase(const QString& front, const QString& name) {
+    if (front.isEmpty()) {
+        emit failed("There's no front to add a phase to.");
+        return;
+    }
+    QString phase = name.trimmed();
+    QString error = phaseNameError(phase);
+    if (!error.isEmpty()) {
+        emit failed(error);
+        return;
+    }
+    QString path = QDir(vaultFolder()).filePath("Projects/" + front + ".md");
+    if (std::optional<QString> failure = addPhaseToProject(
+            path, phase, logDay(QDateTime::currentDateTime()))) {
+        emit failed(*failure);
+        return;
+    }
+    emit phasesChanged();
+    emit phaseAdded(phase);
+}
+
 void Backend::addEntry(const QString& front, const QString& phase,
                        const QString& type, const QString& text) {
     if (!logExists()) {

@@ -1,17 +1,41 @@
 #include "logfile.h"
+#include "fronts.h"
 #include "logedit.h"
 
 #include <QFile>
+#include <QFileInfo>
 #include <QSaveFile>
+
+static std::optional<QString> readText(const QString& path,
+                                       const QString& label, QString& text) {
+    QFile in(path);
+    if (!in.open(QIODevice::ReadOnly)) {
+        return "Couldn't read " + label + ": " + in.errorString();
+    }
+    text = QString::fromUtf8(in.readAll());
+    return std::nullopt;
+}
+
+static std::optional<QString>
+writeText(const QString& path, const QString& label, const QString& text) {
+    QSaveFile out(path);
+    if (!out.open(QIODevice::WriteOnly)) {
+        return "Couldn't write " + label + ": " + out.errorString();
+    }
+    out.write(text.toUtf8());
+    if (!out.commit()) {
+        return "Couldn't write " + label + ": " + out.errorString();
+    }
+    return std::nullopt;
+}
 
 std::optional<QString> addToLog(const QString& path, const QString& front,
                                 const QString& phase, const QString& bullet) {
-    QFile in(path);
-    if (!in.open(QIODevice::ReadOnly)) {
-        return "Couldn't read today's log: " + in.errorString();
+    QString original;
+    if (std::optional<QString> error =
+            readText(path, "today's log", original)) {
+        return error;
     }
-    const QString original = QString::fromUtf8(in.readAll());
-    in.close();
 
     if (original.contains("<%")) {
         return QString("Obsidian hasn't finished setting up today's log. "
@@ -42,14 +66,31 @@ std::optional<QString> addToLog(const QString& path, const QString& front,
     if (text == original) {
         return std::nullopt;
     }
+    return writeText(path, "today's log", text);
+}
 
-    QSaveFile out(path);
-    if (!out.open(QIODevice::WriteOnly)) {
-        return "Couldn't write today's log: " + out.errorString();
+std::optional<QString>
+addPhaseToProject(const QString& path, const QString& name, const QDate& day) {
+    const QString label = QFileInfo(path).fileName();
+    QString original;
+    if (std::optional<QString> error = readText(path, label, original)) {
+        return error;
     }
-    out.write(text.toUtf8());
-    if (!out.commit()) {
-        return "Couldn't write today's log: " + out.errorString();
+
+    bool crlf = original.contains("\r\n");
+    QString text = original;
+    text.replace("\r\n", "\n");
+
+    std::optional<QString> added = withPhase(text, name, day);
+    if (!added) {
+        return label + " has no phase table.";
     }
-    return std::nullopt;
+    if (*added == text) {
+        return name + " is already a phase in " + label + ".";
+    }
+    text = *added;
+    if (crlf) {
+        text.replace("\n", "\r\n");
+    }
+    return writeText(path, label, text);
 }
