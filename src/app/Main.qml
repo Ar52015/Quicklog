@@ -128,6 +128,8 @@ Window {
         width: frontBox.width
         model: backend.phases.concat(["+ phase"])
         focusPolicy: Qt.TabFocus
+        displayText: backend.phases.length === 0 ? "no phase in progress" : currentText
+        palette.buttonText: backend.phases.length === 0 ? field.placeholderTextColor : undefined
         enabled: backend.logExists
         onPhaseChanged: {
             if (phase !== "") {
