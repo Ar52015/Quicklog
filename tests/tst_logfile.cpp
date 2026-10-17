@@ -28,6 +28,7 @@ class TestLogFile : public QObject {
     void init();
     void writesTheEntry();
     void addsFrontWithoutLogs();
+    void noPhaseAddsNoTracksRow();
     void refusesWhileTemplaterRuns();
     void keepsCrlfLineEndings();
     void writesUtf8();
@@ -71,6 +72,19 @@ void TestLogFile::addsFrontWithoutLogs() {
     QVERIFY(bytes.contains("| Quicklog | milestone-4 | | |\n"));
     QVERIFY(!bytes.contains("**Quicklog:**"));
     QVERIFY(bytes.contains("**Front name:**\n- task\n"));
+}
+
+void TestLogFile::noPhaseAddsNoTracksRow() {
+    QByteArray before = readBytes(log);
+    std::optional<QString> error = addToLog(log, "Miscellaneous", "", bullet);
+    QVERIFY2(!error, qPrintable(error.value_or("")));
+    QByteArray bytes = readBytes(log);
+    QVERIFY(bytes.contains("Front:\n  - Miscellaneous\n---"));
+    QVERIFY(bytes.contains("**Miscellaneous:**\n" + bullet.toUtf8()));
+    QVERIFY(!bytes.contains("| Miscellaneous"));
+    qsizetype tracksStart = before.indexOf("| Front |");
+    QCOMPARE(bytes.mid(bytes.indexOf("| Front |"), 120),
+             before.mid(tracksStart, 120));
 }
 
 void TestLogFile::refusesWhileTemplaterRuns() {

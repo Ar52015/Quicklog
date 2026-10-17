@@ -234,8 +234,8 @@ void Backend::addEntry(const QString& front, const QString& phase,
     QString bullet = text.trimmed().isEmpty()
                          ? QString()
                          : formatBullet(type, text.trimmed());
-    if (std::optional<QString> error = addToLog(
-            todayLogPath(), front, phase.isEmpty() ? "-" : phase, bullet)) {
+    if (std::optional<QString> error =
+            addToLog(todayLogPath(), front, phase, bullet)) {
         emit failed(*error);
         return;
     }

@@ -47,11 +47,13 @@ std::optional<QString> addToLog(const QString& path, const QString& front,
     text.replace("\r\n", "\n");
 
     text = withFront(text, front);
-    std::optional<QString> tracked = withTrack(text, front, phase);
-    if (!tracked) {
-        return QString("Today's log has no Tracks table.");
+    if (!phase.isEmpty()) {
+        std::optional<QString> tracked = withTrack(text, front, phase);
+        if (!tracked) {
+            return QString("Today's log has no Tracks table.");
+        }
+        text = *tracked;
     }
-    text = *tracked;
     if (!bullet.isEmpty()) {
         std::optional<QString> bulleted = withBullet(text, front, bullet);
         if (!bulleted) {
