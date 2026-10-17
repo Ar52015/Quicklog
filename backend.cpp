@@ -110,6 +110,22 @@ void Backend::refresh() {
     emit phasesChanged();
 }
 
+void Backend::askForLog() {
+    QDateTime now = QDateTime::currentDateTime();
+    QDate day = logDay(now);
+    if (day != now.date()) {
+        emit failed("It's before 6 AM: create " + day.toString("yyyy-MM-dd") +
+                    ".md in Obsidian, then press ↻.");
+        return;
+    }
+    if (!QDesktopServices::openUrl(
+            obsidianDailyUrl(QDir(vaultFolder()).dirName()))) {
+        emit failed("Couldn't open Obsidian.");
+        return;
+    }
+    emit notice("Asked Obsidian for today's log. Press ↻ once it's there.");
+}
+
 void Backend::addFront(const QString& name) {
     QString front = name.trimmed();
     QString error = frontNameError(front);
@@ -143,8 +159,7 @@ void Backend::openFront(const QString& front) {
 void Backend::addEntry(const QString& front, const QString& phase,
                        const QString& type, const QString& text) {
     if (!logExists()) {
-        emit failed("Today's log doesn't exist yet. Create it in "
-                    "Obsidian, then press ↻.");
+        askForLog();
         return;
     }
     if (front.isEmpty()) {

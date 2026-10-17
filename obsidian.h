@@ -5,5 +5,6 @@
 #include <QUrl>
 
 QUrl obsidianOpenUrl(const QString& notePath);
+QUrl obsidianDailyUrl(const QString& vaultName);
 
 #endif

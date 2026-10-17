@@ -54,9 +54,11 @@ class Backend : public QObject {
     void entryAdded();
     void frontAdded(const QString& front);
     void failed(const QString& message);
+    void notice(const QString& message);
 
   private:
     QString todayLogPath() const;
+    void askForLog();
     QMap<QString, QString> readLogs() const;
 
     QString m_currentFront;

@@ -8,6 +8,7 @@ Window {
     id: window
 
     property string errorText: ""
+    property string noticeText: ""
     property string entryType: ""
 
     function addEntry() {
@@ -36,6 +37,7 @@ Window {
             window.errorText = "";
         }
         onFailed: message => window.errorText = message
+        onNotice: message => window.noticeText = message
         onFrontAdded: front => Qt.callLater(() => frontBox.currentIndex = frontBox.find(front))
     }
 
@@ -47,7 +49,10 @@ Window {
         anchors.margins: 12
         placeholderText: "make an entry?"
         enabled: backend.logExists
-        onTextChanged: window.errorText = ""
+        onTextChanged: {
+            window.errorText = "";
+            window.noticeText = "";
+        }
         onAccepted: {
             if (text.trim() !== "") {
                 window.addEntry();
@@ -62,10 +67,13 @@ Window {
         anchors.left: field.left
         anchors.right: field.right
         anchors.topMargin: 8
-        textFormat: window.errorText !== "" ? Text.PlainText : Text.MarkdownText
+        textFormat: window.errorText !== "" || window.noticeText !== "" ? Text.PlainText : Text.MarkdownText
         text: {
             if (window.errorText !== "") {
                 return window.errorText;
+            }
+            if (window.noticeText !== "") {
+                return window.noticeText;
             }
             if (backend.logExists && addButton.hovered && field.text === "") {
                 return "Add front without logs?";
@@ -155,6 +163,7 @@ Window {
                     text: modelData
                     highlighted: window.entryType === modelData
                     enabled: backend.logExists
+                    opacity: enabled ? 1 : 0.4
                     onClicked: window.entryType = window.entryType === modelData ? "" : modelData
                 }
             }
@@ -170,7 +179,11 @@ Window {
         Button {
             width: 48
             text: "↻"
-            onClicked: backend.refresh()
+            onClicked: {
+                window.errorText = "";
+                window.noticeText = "";
+                backend.refresh();
+            }
         }
     }
 

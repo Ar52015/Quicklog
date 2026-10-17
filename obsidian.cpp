@@ -8,3 +8,8 @@ QUrl obsidianOpenUrl(const QString& notePath) {
     return QUrl::fromEncoded("obsidian://open?path=" +
                              QUrl::toPercentEncoding(note));
 }
+
+QUrl obsidianDailyUrl(const QString& vaultName) {
+    return QUrl::fromEncoded("obsidian://daily?vault=" +
+                             QUrl::toPercentEncoding(vaultName));
+}
