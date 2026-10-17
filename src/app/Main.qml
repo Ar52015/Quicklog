@@ -16,7 +16,7 @@ Window {
     }
 
     width: 640
-    height: 110
+    height: frontBox.y + frontBox.height + 12
     visible: true
     title: "Quicklog"
     color: palette.window
@@ -93,26 +93,41 @@ Window {
         }
     }
 
-    Text {
-        id: preview
-        color: window.errorText !== "" ? RosePine.love : window.noticeText !== "" ? RosePine.foam : field.color
+    Item {
+        id: previewArea
+
         anchors.top: field.bottom
         anchors.left: field.left
         anchors.right: field.right
         anchors.topMargin: 8
-        linkColor: RosePine.iris
-        textFormat: window.errorText !== "" || window.noticeText !== "" ? Text.PlainText : Text.MarkdownText
-        text: {
-            if (window.errorText !== "") {
-                return window.errorText;
+        height: Math.ceil(previewMetrics.lineSpacing) * 2
+        clip: true
+
+        Text {
+            id: preview
+
+            width: parent.width
+            y: Math.min(0, parent.height - contentHeight)
+            wrapMode: Text.Wrap
+            color: window.errorText !== "" ? RosePine.love : window.noticeText !== "" ? RosePine.foam : field.color
+            textFormat: window.errorText !== "" || window.noticeText !== "" ? Text.PlainText : Text.MarkdownText
+            text: {
+                if (window.errorText !== "") {
+                    return window.errorText;
+                }
+                if (window.noticeText !== "") {
+                    return window.noticeText;
+                }
+                if (backend.logExists && addButton.hovered && field.text === "") {
+                    return "Add front without logs?";
+                }
+                return backend.formatBullet(window.entryType, field.text);
             }
-            if (window.noticeText !== "") {
-                return window.noticeText;
-            }
-            if (backend.logExists && addButton.hovered && field.text === "") {
-                return "Add front without logs?";
-            }
-            return backend.formatBullet(window.entryType, field.text);
+        }
+
+        FontMetrics {
+            id: previewMetrics
+            font: preview.font
         }
     }
 
@@ -125,7 +140,7 @@ Window {
             currentIndex = count > 1 ? Math.max(0, find(backend.defaultFront)) : -1;
         }
 
-        anchors.top: preview.bottom
+        anchors.top: previewArea.bottom
         anchors.left: field.left
         anchors.topMargin: 8
         model: backend.fronts.concat(["+ front"])
@@ -191,7 +206,7 @@ Window {
     }
 
     Row {
-        anchors.top: preview.bottom
+        anchors.top: previewArea.bottom
         anchors.right: field.right
         anchors.topMargin: 8
         spacing: 8
