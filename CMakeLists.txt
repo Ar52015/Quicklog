@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-project(QuickLog VERSION 0.2.0 LANGUAGES CXX)
+project(QuickLog VERSION 0.2.1 LANGUAGES CXX)
 
 if(APPLE)
     enable_language(OBJCXX)
