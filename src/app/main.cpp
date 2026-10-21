@@ -5,6 +5,8 @@
 
 #ifdef Q_OS_MACOS
 #include "macwindow.h"
+
+#include <QStyleHints>
 #endif
 
 int main(int argc, char* argv[]) {
@@ -20,6 +22,9 @@ int main(int argc, char* argv[]) {
     QPalette palette = QGuiApplication::palette();
     palette.setColor(QPalette::Link, rosePineIris);
     QGuiApplication::setPalette(palette);
+#ifdef Q_OS_MACOS
+    QGuiApplication::styleHints()->setColorScheme(Qt::ColorScheme::Dark);
+#endif
 
     QQmlApplicationEngine engine;
 #ifdef Q_OS_MACOS
