@@ -24,6 +24,7 @@ int main(int argc, char* argv[]) {
     QGuiApplication::setPalette(palette);
 #ifdef Q_OS_MACOS
     QGuiApplication::styleHints()->setColorScheme(Qt::ColorScheme::Dark);
+    QGuiApplication::styleHints()->setTabFocusBehavior(Qt::TabFocusAllControls);
 #endif
 
     QQmlApplicationEngine engine;
