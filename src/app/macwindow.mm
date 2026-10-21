@@ -1,4 +1,5 @@
 #include "macwindow.h"
+#include "backend.h"
 
 #include <QCursor>
 #include <QGuiApplication>
@@ -16,7 +17,7 @@ static void floatOverFullScreen(QWindow* window) {
     nsWindow.level = NSFloatingWindowLevel;
 }
 
-void loadInCorner(QQmlApplicationEngine& engine) {
+void loadWindow(QQmlApplicationEngine& engine) {
     engine.setInitialProperties({{"visible", false}});
     engine.loadFromModule("Quicklog", "Main");
     auto* window = qobject_cast<QWindow*>(engine.rootObjects().value(0));
@@ -30,8 +31,13 @@ void loadInCorner(QQmlApplicationEngine& engine) {
         screen = QGuiApplication::primaryScreen();
     }
     const QRect area = screen->availableGeometry();
-    window->setPosition(area.x() + area.width() - window->width() - gap,
-                        area.y() + area.height() - window->height() - gap);
+    if (Backend().vaultFolder().isEmpty()) {
+        window->setPosition(area.x() + (area.width() - window->width()) / 2,
+                            area.y() + (area.height() - window->height()) / 2);
+    } else {
+        window->setPosition(area.x() + area.width() - window->width() - gap,
+                            area.y() + area.height() - window->height() - gap);
+    }
     floatOverFullScreen(window);
     window->show();
 }

@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
     QQmlApplicationEngine engine;
 #ifdef Q_OS_MACOS
-    loadInCorner(engine);
+    loadWindow(engine);
 #else
     engine.loadFromModule("Quicklog", "Main");
 #endif

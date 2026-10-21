@@ -3,6 +3,6 @@
 
 class QQmlApplicationEngine;
 
-void loadInCorner(QQmlApplicationEngine& engine);
+void loadWindow(QQmlApplicationEngine& engine);
 
 #endif
