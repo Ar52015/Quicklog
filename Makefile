@@ -1,4 +1,4 @@
-CPP_FILES := $(wildcard src/*/*.cpp src/*/*.h tests/*.cpp)
+CPP_FILES := $(wildcard src/*/*.cpp src/*/*.mm src/*/*.h tests/*.cpp)
 QML_FILES := $(wildcard src/*/*.qml)
 
 ifeq ($(shell uname),Darwin)

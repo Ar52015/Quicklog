@@ -3,6 +3,10 @@
 #include <QPalette>
 #include <QQmlApplicationEngine>
 
+#ifdef Q_OS_MACOS
+#include "macwindow.h"
+#endif
+
 int main(int argc, char* argv[]) {
     QGuiApplication app(argc, argv);
 
@@ -18,7 +22,11 @@ int main(int argc, char* argv[]) {
     QGuiApplication::setPalette(palette);
 
     QQmlApplicationEngine engine;
+#ifdef Q_OS_MACOS
+    loadInCorner(engine);
+#else
     engine.loadFromModule("Quicklog", "Main");
+#endif
 
     return app.exec();
 }

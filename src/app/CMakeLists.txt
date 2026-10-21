@@ -24,6 +24,7 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
 endif()
 
 if(APPLE)
+    target_sources(quicklog PRIVATE macwindow.mm macwindow.h)
     set_target_properties(quicklog PROPERTIES
         OUTPUT_NAME QuickLog
         MACOSX_BUNDLE TRUE
