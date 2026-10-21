@@ -4,8 +4,10 @@ QML_FILES := $(wildcard src/*/*.qml)
 ifeq ($(shell uname),Darwin)
 QMLFORMAT := $(shell brew --prefix qtdeclarative)/bin/qmlformat
 LLVM_BIN := $(shell brew --prefix llvm)/bin/
+APP := ./build/QuickLog.app/Contents/MacOS/QuickLog
 else
 QMLFORMAT := /usr/lib/qt6/bin/qmlformat
+APP := ./build/quicklog
 endif
 
 .PHONY: build configure test run format qmlformat lint clean release install
@@ -23,7 +25,7 @@ test: build
 	ctest --test-dir build --output-on-failure
 
 run: build
-	./build/quicklog
+	$(APP)
 
 format: qmlformat
 	clang-format -i $(CPP_FILES)

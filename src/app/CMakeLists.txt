@@ -20,6 +20,18 @@ target_link_libraries(quicklog PRIVATE Qt6::Quick quicklogcore)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     target_compile_definitions(quicklog PRIVATE QUICKLOG_DEV)
+    set(bundle_suffix -dev)
+endif()
+
+if(APPLE)
+    set_target_properties(quicklog PROPERTIES
+        OUTPUT_NAME QuickLog
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_BUNDLE_NAME QuickLog
+        MACOSX_BUNDLE_GUI_IDENTIFIER io.github.ar52015.quicklog${bundle_suffix}
+        MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
+        MACOSX_BUNDLE_SHORT_VERSION_STRING ${PROJECT_VERSION}
+    )
 endif()
 
 install(TARGETS quicklog
