@@ -1,8 +1,14 @@
 CPP_FILES := $(wildcard src/*/*.cpp src/*/*.h tests/*.cpp)
 QML_FILES := $(wildcard src/*/*.qml)
-QMLFORMAT := /usr/lib/qt6/bin/qmlformat
 
-.PHONY: build configure test run format lint clean release install
+ifeq ($(shell uname),Darwin)
+QMLFORMAT := $(shell brew --prefix qtdeclarative)/bin/qmlformat
+LLVM_BIN := $(shell brew --prefix llvm)/bin/
+else
+QMLFORMAT := /usr/lib/qt6/bin/qmlformat
+endif
+
+.PHONY: build configure test run format qmlformat lint clean release install
 
 build: build/build.ninja
 	cmake --build --preset debug
@@ -19,12 +25,14 @@ test: build
 run: build
 	./build/quicklog
 
-format:
+format: qmlformat
 	clang-format -i $(CPP_FILES)
+
+qmlformat:
 	$(QMLFORMAT) -i $(QML_FILES)
 
 lint: build
-	run-clang-tidy -p build -quiet '$(CURDIR)/(src|tests)/'
+	$(LLVM_BIN)run-clang-tidy -clang-tidy-binary $(LLVM_BIN)clang-tidy -p build -quiet '$(CURDIR)/(src|tests)/'
 	cmake --build --preset debug --target all_qmllint
 
 clean:

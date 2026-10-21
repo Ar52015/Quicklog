@@ -17,9 +17,10 @@ repos:
         types_or: [c++]
       - id: qmlformat
         name: qmlformat
-        entry: /usr/lib/qt6/bin/qmlformat -i
+        entry: make qmlformat
         language: unsupported
         files: \.qml$
+        pass_filenames: false
       - id: lint
         name: clang-tidy and qmllint
         entry: make lint
