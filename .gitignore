@@ -64,3 +64,5 @@ scratch/
 
 # dev help scripts
 refresh
+
+.DS_Store
