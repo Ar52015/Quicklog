@@ -66,3 +66,4 @@ scratch/
 refresh
 
 .DS_Store
+.cache/
