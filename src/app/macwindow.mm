@@ -5,6 +5,16 @@
 #include <QQmlApplicationEngine>
 #include <QScreen>
 #include <QWindow>
+#include <bit>
+
+#import <AppKit/AppKit.h>
+
+static void floatOverFullScreen(QWindow* window) {
+    NSWindow* nsWindow = std::bit_cast<NSView*>(window->winId()).window;
+    nsWindow.collectionBehavior = NSWindowCollectionBehaviorMoveToActiveSpace |
+                                  NSWindowCollectionBehaviorFullScreenAuxiliary;
+    nsWindow.level = NSFloatingWindowLevel;
+}
 
 void loadInCorner(QQmlApplicationEngine& engine) {
     engine.setInitialProperties({{"visible", false}});
@@ -22,5 +32,6 @@ void loadInCorner(QQmlApplicationEngine& engine) {
     const QRect area = screen->availableGeometry();
     window->setPosition(area.x() + area.width() - window->width() - gap,
                         area.y() + area.height() - window->height() - gap);
+    floatOverFullScreen(window);
     window->show();
 }

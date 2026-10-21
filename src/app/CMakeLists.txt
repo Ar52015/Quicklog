@@ -25,9 +25,11 @@ endif()
 
 if(APPLE)
     target_sources(quicklog PRIVATE macwindow.mm macwindow.h)
+    target_link_libraries(quicklog PRIVATE "-framework AppKit")
     set_target_properties(quicklog PROPERTIES
         OUTPUT_NAME QuickLog
         MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST ${CMAKE_CURRENT_SOURCE_DIR}/Info.plist.in
         MACOSX_BUNDLE_BUNDLE_NAME QuickLog
         MACOSX_BUNDLE_GUI_IDENTIFIER io.github.ar52015.quicklog${bundle_suffix}
         MACOSX_BUNDLE_BUNDLE_VERSION ${PROJECT_VERSION}
