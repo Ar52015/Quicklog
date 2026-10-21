@@ -25,7 +25,7 @@ repos:
         name: clang-tidy and qmllint
         entry: make lint
         language: unsupported
-        files: \.(cpp|h|qml)$
+        files: \.(cpp|h|mm|qml)$
         pass_filenames: false
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v4.4.0
