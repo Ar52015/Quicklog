@@ -39,7 +39,15 @@ install(TARGETS quicklog
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
-configure_file(quicklog.desktop.in quicklog.desktop @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/quicklog.desktop
-    DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
-)
+if(APPLE)
+    qt_generate_deploy_qml_app_script(
+        TARGET quicklog
+        OUTPUT_SCRIPT deploy_script
+    )
+    install(SCRIPT ${deploy_script})
+else()
+    configure_file(quicklog.desktop.in quicklog.desktop @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/quicklog.desktop
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/applications
+    )
+endif()

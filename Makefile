@@ -5,6 +5,7 @@ ifeq ($(shell uname),Darwin)
 QMLFORMAT := $(shell brew --prefix qtdeclarative)/bin/qmlformat
 LLVM_BIN := $(shell brew --prefix llvm)/bin/
 APP := ./build/QuickLog.app/Contents/MacOS/QuickLog
+INSTALL_FLAGS := --prefix $(HOME)/Applications
 else
 QMLFORMAT := /usr/lib/qt6/bin/qmlformat
 APP := ./build/quicklog
@@ -45,4 +46,4 @@ release:
 	cmake --build --preset release
 
 install: release
-	cmake --install build-release
+	cmake --install build-release $(INSTALL_FLAGS)
