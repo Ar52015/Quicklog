@@ -100,7 +100,7 @@ std::optional<QString> withTrack(const QString& log, const QString& front,
     QString row = "| " + front + " | " + phase + " |" +
                   QString(" |").repeated(qMax<qsizetype>(columns - 2, 0));
     if (emptyRow >= 0) {
-        lines[emptyRow] = row;
+        lines[emptyRow] = std::move(row);
     } else {
         lines.insert(last + 1, row);
     }
