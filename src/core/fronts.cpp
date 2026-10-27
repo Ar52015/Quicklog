@@ -131,9 +131,69 @@ QStringList inProgressPhases(const QString& projectText) {
     });
 }
 
+QStringList allPhases(const QString& projectText) {
+    return phasesWhere(projectText, [](const QString&) { return true; });
+}
+
 QStringList pausedPhases(const QString& projectText) {
     return phasesWhere(
         projectText, [](const QString& status) { return status == "paused"; });
+}
+
+static QString nameSlug(const QString& name) {
+    static const QRegularExpression other("[^a-z0-9]+");
+    static const QRegularExpression edges("^-+|-+$");
+    return name.toLower().replace(other, "-").remove(edges);
+}
+
+QString phaseOwner(const QString& trackName, const QStringList& phases) {
+    const QString name = nameSlug(trackName);
+    if (name.isEmpty()) {
+        return {};
+    }
+    QString owner;
+    for (const QString& phase : phases) {
+        const QString slug = nameSlug(phase);
+        if (slug == name) {
+            return phase;
+        }
+        if (!slug.isEmpty() && name.startsWith(slug + "-") &&
+            slug.size() > nameSlug(owner).size()) {
+            owner = phase;
+        }
+    }
+    if (!owner.isEmpty()) {
+        return owner;
+    }
+    QString shortened;
+    int matches = 0;
+    for (const QString& phase : phases) {
+        if (nameSlug(phase).startsWith(name + "-")) {
+            shortened = phase;
+            ++matches;
+        }
+    }
+    return matches == 1 ? shortened : QString();
+}
+
+QString trackNameFor(const QString& phase, const QStringList& phases,
+                     const QMap<QString, QString>& logs, const QString& front) {
+    for (auto log = logs.constEnd(); log != logs.constBegin();) {
+        --log;
+        const QList<QStringList> rows = trackRows(log.value());
+        for (auto row = rows.crbegin(); row != rows.crend(); ++row) {
+            if (normFront(row->at(0)) == front &&
+                phaseOwner(row->at(1), phases) == phase) {
+                return row->at(1);
+            }
+        }
+    }
+    return phase;
+}
+
+QString subphaseName(const QString& phase, const QString& part) {
+    static const QRegularExpression spaces("\\s+");
+    return phase + "-" + part.trimmed().replace(spaces, "-");
 }
 
 QString chooseDefaultPhase(const QStringList& phases, const QString& todaysLog,
@@ -141,7 +201,10 @@ QString chooseDefaultPhase(const QStringList& phases, const QString& todaysLog,
     QString today;
     for (const QStringList& cells : trackRows(todaysLog)) {
         if (normFront(cells[0]) == front) {
-            today = cells[1];
+            QString owner = phaseOwner(cells[1], phases);
+            if (!owner.isEmpty()) {
+                today = owner;
+            }
         }
     }
     return phases.contains(today) ? today : phases.value(0);

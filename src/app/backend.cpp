@@ -205,6 +205,46 @@ QString Backend::phaseApproach(const QString& front,
     return ::phaseApproach(readText(projectPath(front)), phase);
 }
 
+QString Backend::trackLabel(const QString& front, const QString& phase) const {
+    if (front.isEmpty() || phase.isEmpty()) {
+        return {};
+    }
+    QString track = trackNameFor(phase, allPhases(readText(projectPath(front))),
+                                 readLogs(), front);
+    if (track == phase) {
+        return {};
+    }
+    if (track.startsWith(phase + "-", Qt::CaseInsensitive)) {
+        return track.mid(phase.size() + 1);
+    }
+    return track;
+}
+
+void Backend::startSubphase(const QString& front, const QString& phase,
+                            const QString& part) {
+    if (front.isEmpty() || phase.isEmpty()) {
+        emit failed("Pick a phase first.");
+        return;
+    }
+    const QString name = part.trimmed();
+    const QString error = phaseNameError(name);
+    if (!error.isEmpty()) {
+        emit failed(error);
+        return;
+    }
+    if (!logExists()) {
+        askForLog();
+        return;
+    }
+    if (std::optional<QString> failure = addToLog(
+            todayLogPath(), front, subphaseName(phase, name), QString())) {
+        emit failed(*failure);
+        return;
+    }
+    emit phasesChanged();
+    emit phaseAdded(phase);
+}
+
 void Backend::setPhaseStatus(const QString& front, const QString& phase,
                              const QString& status, const QString& approach) {
     if (front.isEmpty() || phase.isEmpty()) {
@@ -234,8 +274,13 @@ void Backend::addEntry(const QString& front, const QString& phase,
     QString bullet = text.trimmed().isEmpty()
                          ? QString()
                          : formatBullet(type, text.trimmed());
+    const QString track =
+        phase.isEmpty()
+            ? QString()
+            : trackNameFor(phase, allPhases(readText(projectPath(front))),
+                           readLogs(), front);
     if (std::optional<QString> error =
-            addToLog(todayLogPath(), front, phase, bullet)) {
+            addToLog(todayLogPath(), front, track, bullet)) {
         emit failed(*error);
         return;
     }

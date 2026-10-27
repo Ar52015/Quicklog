@@ -150,6 +150,7 @@ Window {
         anchors.top: previewArea.bottom
         anchors.left: field.left
         anchors.topMargin: 8
+        width: (actionRow.x - field.x - 16) / 2
         model: backend.fronts.concat(["+ front"])
         focusPolicy: Qt.TabFocus
         background: InputFrame {
@@ -157,7 +158,6 @@ Window {
             hovered: frontBox.hovered
         }
         enabled: backend.logExists
-        implicitContentWidthPolicy: ComboBox.WidestText
         onFrontChanged: {
             if (front !== "") {
                 backend.currentFront = front;
@@ -175,6 +175,7 @@ Window {
         id: phaseBox
 
         readonly property string phase: currentIndex >= 0 && currentIndex < count - 1 ? currentText : ""
+        readonly property string trackLabel: backend.phases.includes(phase) ? backend.trackLabel(frontBox.front, phase) : ""
         property string chosen: ""
 
         function selectDefault() {
@@ -191,7 +192,18 @@ Window {
             focused: phaseBox.visualFocus
             hovered: phaseBox.hovered
         }
-        displayText: currentIndex < 0 ? "no phase in progress" : currentText
+        displayText: currentIndex < 0 ? "no phase in progress" : trackLabel !== "" ? currentText + " › " + trackLabel : currentText
+        contentItem: Text {
+            leftPadding: 4 - phaseBox.padding
+            rightPadding: 4 - phaseBox.padding
+            topPadding: 4
+            bottomPadding: 4
+            text: phaseBox.displayText
+            font: phaseBox.font
+            color: phaseBox.palette.buttonText
+            verticalAlignment: Text.AlignVCenter
+            elide: Text.ElideRight
+        }
         palette.buttonText: enabled && currentIndex < 0 ? field.placeholderTextColor : undefined
         enabled: backend.logExists
         onPhaseChanged: {
@@ -202,8 +214,9 @@ Window {
         }
         onActivated: index => {
             if (index === count - 1) {
-                newPhasePopup.open();
                 const previous = find(chosen);
+                newPhasePopup.parentPhase = previous >= 0 ? chosen : "";
+                newPhasePopup.open();
                 if (previous >= 0) {
                     currentIndex = previous;
                 } else {
@@ -214,6 +227,8 @@ Window {
     }
 
     Row {
+        id: actionRow
+
         anchors.top: previewArea.bottom
         anchors.right: field.right
         anchors.topMargin: 8
@@ -347,6 +362,7 @@ Window {
 
         width: window.width - 24
         onPhaseAccepted: (name, approach) => backend.addPhase(frontBox.front, name, approach)
+        onSubphaseAccepted: name => backend.startSubphase(frontBox.front, newPhasePopup.parentPhase, name)
         onOpenClicked: backend.openFront(frontBox.front)
         onClosed: field.forceActiveFocus()
     }

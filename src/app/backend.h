@@ -45,6 +45,10 @@ class Backend : public QObject {
                               const QString& approach);
     Q_INVOKABLE QString phaseApproach(const QString& front,
                                       const QString& phase) const;
+    Q_INVOKABLE QString trackLabel(const QString& front,
+                                   const QString& phase) const;
+    Q_INVOKABLE void startSubphase(const QString& front, const QString& phase,
+                                   const QString& part);
     Q_INVOKABLE void setPhaseStatus(const QString& front, const QString& phase,
                                     const QString& status,
                                     const QString& approach);

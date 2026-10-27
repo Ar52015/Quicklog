@@ -4,7 +4,10 @@ import QtQuick.Controls.Fusion
 Popup {
     id: popup
 
+    property string parentPhase
+
     signal phaseAccepted(string name, string approach)
+    signal subphaseAccepted(string name)
     signal openClicked
 
     anchors.centerIn: Overlay.overlay
@@ -13,6 +16,7 @@ Popup {
     onOpened: {
         nameField.clear();
         approachField.clear();
+        subphaseBox.checked = false;
         nameField.forceActiveFocus();
     }
 
@@ -25,7 +29,7 @@ Popup {
             TextField {
                 id: nameField
                 width: (popup.availableWidth - 8) * 2 / 5
-                placeholderText: "New phase name"
+                placeholderText: subphaseBox.checked ? "Subphase name" : "New phase name"
                 background: InputFrame {
                     focused: nameField.activeFocus
                 }
@@ -36,6 +40,7 @@ Popup {
                 id: approachField
                 width: (popup.availableWidth - 8) * 3 / 5
                 placeholderText: "Approach (optional)"
+                enabled: !subphaseBox.checked
                 background: InputFrame {
                     focused: approachField.activeFocus
                 }
@@ -43,30 +48,49 @@ Popup {
             }
         }
 
-        Row {
-            anchors.right: parent.right
-            spacing: 8
+        Item {
+            width: popup.availableWidth
+            height: buttons.height
 
-            EnterButton {
-                id: addButton
-                text: "Add"
-                onClicked: {
-                    popup.phaseAccepted(nameField.text, approachField.text);
-                    popup.close();
-                }
+            CheckBox {
+                id: subphaseBox
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width - buttons.width - 8
+                visible: popup.parentPhase !== ""
+                focusPolicy: Qt.TabFocus
+                text: "subphase of " + popup.parentPhase
             }
 
-            EnterButton {
-                text: "Open in Obsidian"
-                onClicked: {
-                    popup.openClicked();
-                    popup.close();
-                }
-            }
+            Row {
+                id: buttons
+                anchors.right: parent.right
+                spacing: 8
 
-            EnterButton {
-                text: "Cancel"
-                onClicked: popup.close()
+                EnterButton {
+                    id: addButton
+                    text: "Add"
+                    onClicked: {
+                        if (subphaseBox.checked) {
+                            popup.subphaseAccepted(nameField.text);
+                        } else {
+                            popup.phaseAccepted(nameField.text, approachField.text);
+                        }
+                        popup.close();
+                    }
+                }
+
+                EnterButton {
+                    text: "Open in Obsidian"
+                    onClicked: {
+                        popup.openClicked();
+                        popup.close();
+                    }
+                }
+
+                EnterButton {
+                    text: "Cancel"
+                    onClicked: popup.close()
+                }
             }
         }
     }

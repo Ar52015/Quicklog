@@ -16,6 +16,11 @@ QStringList orderFronts(const QStringList& fronts,
 bool isActiveProject(const QString& projectText);
 QStringList inProgressPhases(const QString& projectText);
 QStringList pausedPhases(const QString& projectText);
+QStringList allPhases(const QString& projectText);
+QString phaseOwner(const QString& trackName, const QStringList& phases);
+QString trackNameFor(const QString& phase, const QStringList& phases,
+                     const QMap<QString, QString>& logs, const QString& front);
+QString subphaseName(const QString& phase, const QString& part);
 QString chooseDefaultPhase(const QStringList& phases, const QString& todaysLog,
                            const QString& front);
 

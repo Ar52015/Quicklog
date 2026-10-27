@@ -39,6 +39,11 @@ class TestFronts : public QObject {
     void phaseStatuses();
     void statusOfAnUnknownPhase();
     void pausedPhaseList();
+    void phaseOwners_data();
+    void phaseOwners();
+    void trackNames_data();
+    void trackNames();
+    void subphaseNames();
 };
 
 void TestFronts::newestFirst() {
@@ -185,6 +190,9 @@ void TestFronts::defaultPhases_data() {
     QTest::newRow("commented row ignored") << ab << "<!--\n| F | b | | |\n-->\n"
                                            << "a";
     QTest::newRow("no phases") << QStringList() << "| F | b | | |\n" << "";
+    QTest::newRow("today's subphase picks its phase")
+        << ab << "| F | b-part-two | | |\n"
+        << "b";
 }
 
 void TestFronts::defaultPhases() {
@@ -511,6 +519,96 @@ void TestFronts::pausedPhaseList() {
         "|  4.  | *d* | [[2026-10-05]] |  | paused |\n";
     QCOMPARE(pausedPhases(project), (QStringList{"b", "d"}));
     QCOMPARE(inProgressPhases(project), QStringList{"c"});
+}
+
+void TestFronts::phaseOwners_data() {
+    QTest::addColumn<QString>("track");
+    QTest::addColumn<QStringList>("phases");
+    QTest::addColumn<QString>("expected");
+
+    const QStringList reading = {
+        "metamorphosis - Franz Kafka",
+        "the problems of philosophy - Bertrand Russell"};
+    const QStringList fixes = {"bug-fixes", "bug-fixes-II"};
+    const QStringList odin = {"the-odin-project-html-foundations",
+                              "the-odin-project-css-foundations"};
+
+    QTest::newRow("same name")
+        << "computing-101" << QStringList{"computing-101"} << "computing-101";
+    QTest::newRow("case and spaces")
+        << "The-Problems-of-Philosophy-Bertrand-Russell" << reading
+        << "the problems of philosophy - Bertrand Russell";
+    QTest::newRow("part") << "computing-101-control-flow"
+                          << QStringList{"setup", "computing-101"}
+                          << "computing-101";
+    QTest::newRow("exact beats part")
+        << "bug-fixes-II" << fixes << "bug-fixes-II";
+    QTest::newRow("longer table name wins")
+        << "bug-fixes-II-cleanup" << fixes << "bug-fixes-II";
+    QTest::newRow("shortened")
+        << "the-problems-of-philosophy" << reading
+        << "the problems of philosophy - Bertrand Russell";
+    QTest::newRow("shortened but ambiguous")
+        << "the-odin-project" << odin << "";
+    QTest::newRow("typo") << "comuting-101-assembly"
+                          << QStringList{"computing-101"} << "";
+    QTest::newRow("no phase") << "-" << reading << "";
+}
+
+void TestFronts::phaseOwners() {
+    QFETCH(QString, track);
+    QFETCH(QStringList, phases);
+    QFETCH(QString, expected);
+    QCOMPARE(phaseOwner(track, phases), expected);
+}
+
+void TestFronts::trackNames_data() {
+    QTest::addColumn<QStringList>("logs");
+    QTest::addColumn<QString>("phase");
+    QTest::addColumn<QString>("expected");
+
+    const QString row = "| Reading | %1 | | |\n";
+    QTest::newRow("newest log wins")
+        << QStringList{row.arg("the problems of philosophy - Bertrand Russell"),
+                       row.arg("the-problems-of-philosophy")}
+        << "the problems of philosophy - Bertrand Russell"
+        << "the-problems-of-philosophy";
+    QTest::newRow("last row of the log wins")
+        << QStringList{"| Cracked | computing-101-a | | |\n"
+                       "| Cracked | computing-101-b | | |\n"}
+        << "computing-101" << "computing-101-b";
+    QTest::newRow("another phase's newer rows are skipped")
+        << QStringList{"| Cracked | computing-101-a | | |\n",
+                       "| Cracked | linux-luminarium-x | | |\n"}
+        << "computing-101" << "computing-101-a";
+    QTest::newRow("another front is ignored")
+        << QStringList{"| Reading | the-problems-of-philosophy | | |\n",
+                       "| Cogwars | the-problems-of-philosophy-x | | |\n"}
+        << "the problems of philosophy - Bertrand Russell"
+        << "the-problems-of-philosophy";
+    QTest::newRow("no rows yet")
+        << QStringList{"| Cracked | setup | | |\n"} << "computing-101"
+        << "computing-101";
+}
+
+void TestFronts::trackNames() {
+    QFETCH(QStringList, logs);
+    QFETCH(QString, phase);
+    QFETCH(QString, expected);
+    const QStringList phases = {
+        "setup", "computing-101", "linux-luminarium",
+        "the problems of philosophy - Bertrand Russell"};
+    QMap<QString, QString> byDate;
+    for (qsizetype i = 0; i < logs.size(); ++i) {
+        byDate.insert(QString("2026-10-%1").arg(10 + i), logs[i]);
+    }
+    const QString front = logs.value(0).section('|', 1, 1).trimmed();
+    QCOMPARE(trackNameFor(phase, phases, byDate, front), expected);
+}
+
+void TestFronts::subphaseNames() {
+    QCOMPARE(subphaseName("computing-101", "  control flow "),
+             "computing-101-control-flow");
 }
 
 QTEST_GUILESS_MAIN(TestFronts)
